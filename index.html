@@ -89,6 +89,7 @@ button,select,input{font:inherit;color:inherit}
 .full-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px}
 .rec-btn{color:var(--rec);border-color:var(--rec);font-weight:700}
 .rec-btn.on{background:var(--rec);color:#fff}
+.full-list{flex-basis:100%;margin-top:4px}
 .edit-bar .group{gap:4px}
 .mini-wrap{height:34px;border-radius:6px 6px 0 0;background:var(--sunk);overflow:hidden;touch-action:none;border-bottom:1px solid var(--line)}
 #cvMini{width:100%;height:100%;display:block;cursor:grab}
@@ -249,7 +250,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     <div class="sep" id="sepRow">
       <div class="sep-main">
         <div class="eyebrow">Pas 2</div>
-        <b class="sep-title" id="sepTitle">Separa la veu de la banda</b>
+        <b class="sep-title" id="sepTitle">Separant la veu de la banda</b>
         <span class="sep-info" id="sepMsg">Cal fer-ho abans de res: les frases i la melodia es treuen només de la pista de veu. Es fa al teu ordinador; la primera vegada descarrega el model (uns 170 MB) i després el recorda.</span>
         <span class="progress sep-prog" id="sepProg" hidden><i id="sepBar"></i></span>
       </div>
@@ -270,7 +271,8 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       <button class="sbtn rec-btn" id="bFull" type="button">● Canta-la tota des del cursor</button>
       <button class="sbtn" id="bFullStop" type="button" hidden>■ Atura i desa</button>
       <button class="sbtn" id="bFullPlay" type="button" hidden>▶ Escolta’t sencera amb la base</button>
-      <span class="stat-l" id="fullInfo">Et grava de seguit amb la base; en acabar, cada frase queda amb la seva presa i la seva nota.</span>
+      <span class="stat-l" id="fullInfo">Et grava de seguit amb la base. Atura quan vulguis (Esc): les frases que hagis cantat queden amb la seva presa.</span>
+      <ul class="tlist full-list" id="fullList" hidden></ul>
     </div>
     <div class="edit-bar">
       <div class="group">
@@ -673,10 +675,11 @@ async function loadMixFile(f){
   try{b=await ac().decodeAudioData(await f.arrayBuffer())}
   catch(err){setStatus('');$('#startPanel').querySelector('.start-s').textContent='No he pogut llegir «'+f.name+'» ('+errMsg(err)+'). Prova amb un altre format (MP3, WAV, M4A) o amb Chrome.';toast('No he pogut llegir aquest fitxer d’àudio.');return}
   try{
-    cancel();S.mix=toLR(b);S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;$('#bFullPlay').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
+    cancel();S.mix=toLR(b);S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;S.fullTakes=[];$('#bFullPlay').hidden=true;$('#fullList').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
   }catch(err){console.error(err);setStatus('');toast('He llegit la cançó però ha fallat l’anàlisi: '+errMsg(err));return}
-  let cached=false;try{cached=await modelCached()}catch(e){}
-  if(cached)separateVoice();else toast('Cançó carregada. Ara separa la veu (pas 2).');
+  // separate straight away; the step-2 panel shows progress and the alternatives
+  if(IS_FILE&&IS_SAFARI)toast('Cançó carregada. Safari no pot separar la veu des d’un fitxer del disc: obre l’eina amb Chrome o des de la web.');
+  else separateVoice();
 }
 ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();$('#startPanel').classList.add('over')}}));
 ['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{$('#startPanel').classList.remove('over')}));
@@ -788,7 +791,7 @@ const DEMUCS_URL='https://cdn.jsdelivr.net/npm/demucs-web@1.0.2/src/index.js';
 const MODEL_FALLBACK='https://huggingface.co/timcsy/demucs-web-onnx/resolve/main/htdemucs_embedded.onnx';
 let sepProc=null,sepBusy=false,modelUrl=null;
 async function openCache(){try{return window.caches?await caches.open('mirall-de-veu-models'):null}catch(e){return null}}
-async function modelCached(){const c=await openCache();if(!c)return false;try{return!!(await c.match(MODEL_FALLBACK))||!!(modelUrl&&await c.match(modelUrl))}catch(e){return false}}
+async function modelCached(){const c=await openCache();if(!c)return false;try{return(await c.keys()).length>0}catch(e){return false}}
 async function fetchModel(url,onDl){
   const cache=await openCache();
   if(cache){try{const hit=await cache.match(url);if(hit){onDl(1,1,true);return await hit.arrayBuffer()}}catch(e){}}
@@ -818,7 +821,7 @@ function renderSep(){
   if(!sepBusy&&!done&&IS_FILE&&IS_SAFARI){sepUI('Safari sol bloquejar la separació quan l’eina s’obre des d’un fitxer del disc. Obre aquest mateix fitxer amb Google Chrome (botó dret › Obre amb › Google Chrome).',null);return}
   if(!sepBusy)sepUI(done?(S.sepBy==='ai'?(S.sepInfo||'Veu separada amb IA.'):'Veu separada a partir de la pista que has carregat. Les frases i la melodia surten només d’aquesta pista.')
     :S.approx?'Estàs treballant sense separar la veu. Pots separar-la quan vulguis: les frases es tornaran a detectar sobre la veu.'
-    :'Cal fer-ho abans de res: les frases i la melodia es treuen només de la pista de veu. Es fa al teu ordinador; la primera vegada descarrega el model (uns 170 MB) i després el recorda.',null);
+    :'Les frases i la melodia es treuen només de la pista de veu. Es fa al teu ordinador; la primera vegada descarrega el model (uns 170 MB) i després el recorda.',null);
 }
 $('#bApprox').addEventListener('click',()=>{if(!S.mix)return;S.approx=true;cancel();loadSong(false);toast('Frases detectades de manera aproximada. Separa la veu quan puguis.')});
 let sepLib=null,sepOrt=null,sepBuf=null,sepBackend='';
@@ -936,7 +939,7 @@ function beep(t,f=1000){const c=ac(),o=c.createOscillator(),g=c.createGain();o.f
 
 /* ---------- run control ---------- */
 let runId=0;
-function cancel(){runId++;if(fullRec){fullRec=null;rec.active=false;rec.chunks=[];S.recInfo=null;S.live=null;$('#bFull').hidden=false;$('#bFullStop').hidden=true;$('#fullInfo').textContent='Gravació aturada sense desar.'}stopAll();S.notePlay=null;setPhase(null);if(S.armed){S.armed=false;S.recInfo=null;S.live=null;rec.active=false;renderDesk()}}
+function cancel(){runId++;if(fullRec){fullStop();return}stopAll();S.notePlay=null;setPhase(null);if(S.armed){S.armed=false;S.recInfo=null;S.live=null;rec.active=false;renderDesk()}}
 function waitUntil(t,id){return new Promise(res=>{const f=()=>{if(id!==runId)return res(false);if(ac().currentTime>=t)return res(true);setTimeout(f,25)};f()})}
 function setStatus(html){$('#status').innerHTML=html}
 function setPhase(name,html){
@@ -1070,7 +1073,9 @@ async function fullStop(){
   const sr=c.sampleRate,tot=ch.reduce((a,x)=>a+x.d.length,0),all=new Float32Array(tot);let o=0;for(const x of ch){all.set(x.d,o);o+=x.d.length}
   const songToIdx=t=>Math.round((fr.t0+(t-fr.from)-ch[0].t)*sr);
   const endSong=fr.from+(c.currentTime-fr.t0);
-  S.fullTake={data:all.slice(Math.max(0,songToIdx(fr.from))),sr,from:fr.from,lat:fr.lat};
+  S.fullTakes=S.fullTakes||[];
+  const full={id:uid++,n:S.fullTakes.length+1,data:all.slice(Math.max(0,songToIdx(fr.from))),sr,from:fr.from,to:endSong,lat:fr.lat,phr:[]};
+  S.fullTakes.push(full);S.fullTake=full;
   $('#fullInfo').textContent='Analitzant les frases…';await sleep(20);
   let made=0;
   for(const ph of S.phrases){
@@ -1078,23 +1083,36 @@ async function fullStop(){
     const a=Math.max(0,songToIdx(ph.start-0.25)),b=Math.min(all.length,songToIdx(ph.end+1.0));if(b-a<sr*0.5)continue;
     const n=(ph.takes.reduce((m,t)=>Math.max(m,t.n),0))+1;
     const take={id:uid++,n,data:all.slice(a,b),sr,withAcc:true,mode:'full',lat:fr.lat+0.25,nudge:0,track:null,score:null};
-    take.track=pitchTrack(take.data,sr);ph.takes.push(take);compareData(ph,take);made++;
+    take.track=pitchTrack(take.data,sr);take.full=full.id;ph.takes.push(take);compareData(ph,take);made++;full.phr.push(ph.id);
   }
-  S.take=null;renderAll();
+  const first=S.phrases.findIndex(p=>p.takes.some(t=>t.full===full.id));
+  if(first>=0){S.cur=first;S.take=S.phrases[first].takes.find(t=>t.full===full.id)}else S.take=null;
+  renderAll();renderFullTakes();
   $('#bFullPlay').hidden=false;
   const scored=S.phrases.filter(p=>p.takes.length&&p.takes[p.takes.length-1].score!=null),avg=scored.length?Math.round(scored.reduce((a,p)=>a+p.takes[p.takes.length-1].score,0)/scored.length):null;
-  $('#fullInfo').textContent='Desat: '+made+' frases amb presa.'+(avg!=null?' Mitjana de notes encertades: '+avg+' %.':'')+' Clica una frase per veure-la.';
+  $('#fullInfo').textContent='Desat: '+made+(made===1?' frase':' frases')+' amb presa.'+(avg!=null?' Mitjana de notes encertades: '+avg+' %.':'')+' Clica una frase per veure-la nota a nota.';
   toast('Cançó sencera gravada: '+made+' frases.');
 }
-function fullPlay(){
-  const ft=S.fullTake;if(!ft)return;cancel();
-  const base=ac().currentTime+0.06,from=Math.max(ft.from,S.cursor>ft.from?S.cursor:ft.from),off=from-ft.from;
-  playSegment(from,songDur(),0,S.ga,base);
+function fullPlay(ft){
+  ft=ft||S.fullTake;if(!ft)return;cancel();S.fullTake=ft;renderFullTakes();
+  const base=ac().currentTime+0.06,from=(S.cursor>ft.from&&S.cursor<ft.to-0.5)?S.cursor:ft.from,off=from-ft.from;
+  playSegment(from,Math.min(songDur(),ft.to+0.5),0,S.ga,base);
   playChannels([ft.data],ft.sr,base,null,{offset:off+ft.lat,reverb:verbAmt()});
 }
+function renderFullTakes(){
+  const ul=$('#fullList'),list=S.fullTakes||[];ul.hidden=!list.length;
+  ul.innerHTML=list.slice().reverse().map(f=>{const ph=S.phrases.filter(p=>p.takes.some(t=>t.full===f.id)),sc=ph.map(p=>p.takes.find(t=>t.full===f.id).score).filter(x=>x!=null),avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length):null;
+    return '<li class="take'+(f===S.fullTake?' sel':'')+'" data-fid="'+f.id+'"><span class="take-main"><b>Sencera '+f.n+'</b>'+chipFor(avg)+'<small>'+fmt(f.from)+' – '+fmt(f.to)+' · '+ph.length+(ph.length===1?' frase':' frases')+'</small></span><button class="sbtn" type="button" data-a="play">▶ Escolta’t amb la base</button><button class="sbtn" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del">Elimina</button></li>'}).join('');
+}
+$('#fullList').addEventListener('click',e=>{
+  const li=e.target.closest('[data-fid]'),b=e.target.closest('button');if(!li||!b)return;const f=(S.fullTakes||[]).find(x=>x.id===+li.dataset.fid);if(!f)return;
+  if(b.dataset.a==='play')fullPlay(f);
+  if(b.dataset.a==='wav')saveBlob(wavBlob([f.data],f.sr),S.name+' - sencera '+f.n+'.wav');
+  if(b.dataset.a==='del'){cancel();S.fullTakes=S.fullTakes.filter(x=>x!==f);S.phrases.forEach(p=>{p.takes=p.takes.filter(t=>t.full!==f.id)});if(S.fullTake===f)S.fullTake=S.fullTakes[S.fullTakes.length-1]||null;if(S.take&&S.take.full===f.id)S.take=null;renderAll();renderFullTakes();$('#bFullPlay').hidden=!S.fullTake}
+});
 $('#bFull').addEventListener('click',fullStart);
 $('#bFullStop').addEventListener('click',fullStop);
-$('#bFullPlay').addEventListener('click',fullPlay);
+$('#bFullPlay').addEventListener('click',()=>fullPlay());
 
 /* ---------- comparison ---------- */
 function compareData(ph,take){
@@ -1403,7 +1421,7 @@ function renderDesk(){
   }
   $('#stats').innerHTML=html;
   // takes
-  $('#tlist').innerHTML=ph&&ph.takes.length?ph.takes.slice().reverse().map(t=>'<li class="take'+(t===S.take?' sel':'')+'" data-id="'+t.id+'"><button class="take-main" type="button" data-a="sel"><b>Presa '+t.n+'</b>'+chipFor(t.score)+'<small>'+dec(t.data.length/t.sr)+' s · '+(t.mode==='full'?'cançó sencera':t.mode==='guide'?'amb base i guia':t.withAcc?'amb base':'a cappella')+'</small></button><button class="sbtn" type="button" data-a="play">▶ Escolta</button><button class="sbtn" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del" aria-label="Elimina la presa '+t.n+'">Elimina</button></li>').join('')
+  $('#tlist').innerHTML=ph&&ph.takes.length?ph.takes.slice().reverse().map(t=>'<li class="take'+(t===S.take?' sel':'')+'" data-id="'+t.id+'"><button class="take-main" type="button" data-a="sel"><b>Presa '+t.n+'</b>'+chipFor(t.score)+'<small>'+dec(t.data.length/t.sr)+' s · '+(t.mode==='full'?'de la sencera':t.mode==='guide'?'amb base i guia':t.withAcc?'amb base':'a cappella')+'</small></button><button class="sbtn" type="button" data-a="play">▶ Escolta</button><button class="sbtn" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del" aria-label="Elimina la presa '+t.n+'">Elimina</button></li>').join('')
     :'<li class="empty">Les teves gravacions d’aquesta frase apareixeran aquí.</li>';
   drawCompare();
 }
