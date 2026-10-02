@@ -1141,7 +1141,10 @@ function compareData(ph,take){
   if($('#oOct').checked&&pairs.length){const ds=pairs.map(p=>p[1]-p[0]).sort((a,b)=>a-b);oct=Math.round(ds[ds.length>>1]/12)*12}
   let inT=0,sum=0,cnt=0;
   for(const[r,v]of pairs){const c=(v-oct-r)*100;if(Math.abs(c)<=50)inT++;if(Math.abs(c)<300){sum+=c;cnt++}}
-  const res={ref,tk,off,oct,n:pairs.length,inTune:pairs.length?inT/pairs.length:0,mean:cnt?sum/cnt:0,refSpan:voicedSpan(ref),tkSpan:voicedSpan(tk)};
+  // sung span: from the first to the last real note (≥120 ms, stable pitch) inside the phrase window, so breaths, bleed and the recording tail don't count
+  const rn=noteSeg(ref).filter(n=>n.t1-n.t0>=0.12),tn=noteSeg(tk).map(n=>({t0:n.t0-off,t1:n.t1-off,m:n.m})).filter(n=>n.t1-n.t0>=0.12&&n.t1>-0.3&&n.t0<ref.dur+0.3);
+  const span=a=>a.length?a[a.length-1].t1-a[0].t0:0;
+  const res={ref,tk,off,oct,n:pairs.length,inTune:pairs.length?inT/pairs.length:0,mean:cnt?sum/cnt:0,refSpan:span(rn),tkSpan:span(tn),tkNotes:tn.length,refNotes:rn.length};
   take.score=res.n>10?Math.round(res.inTune*100):null;
   if(res.n>10){const nh=noteHits(noteSeg(ref),(()=>{const pts=[];for(let f=0;f<tk.midi.length;f++)pts.push({t:f*tk.hop-off,m:tk.midi[f]-oct});return pts})());if(nh&&nh.length)take.score=Math.round(100*nh.filter(Boolean).length/nh.length)}
   return res;
@@ -1404,17 +1407,17 @@ function renderDesk(){
       const good=frac>=.85;
       let tip='';
       if(good&&ok===nn)tip='Totes les notes al lloc.';
+      else if(cd.tkNotes>=2&&cd.refSpan>1&&cd.tkSpan>cd.refSpan*1.25+0.5)tip='L’has cantada més lenta que l’original. Escolta-la un cop més i segueix la base.';
+      else if(cd.tkNotes>=2&&cd.refSpan>1&&cd.tkSpan<cd.refSpan*0.75-0.5)tip='L’has cantada més ràpida que l’original. Deixa que la base et porti.';
       else if(m>30)tip='Vas una mica alta: canta-la una mica més greu.';
       else if(m<-30)tip='Vas una mica baixa: canta-la una mica més aguda.';
-      else if(cd.tkSpan>cd.refSpan+0.4)tip='L’has cantada més lenta que l’original. Escolta-la un cop més i segueix la base.';
-      else if(cd.tkSpan<cd.refSpan-0.4)tip='L’has cantada més ràpida que l’original. Deixa que la base et porti.';
       else{const miss=nh.findIndex(h=>!h);tip=miss>=0?'Fixa’t en la nota '+(miss+1)+' de '+nn+': és la primera que se t’escapa. Escolta-la i torna-hi.':'Gairebé totes! Una vegada més i ho tens.'}
       html='<div class="verdict"><div class="stat"><span class="big" style="color:var(--'+(frac>=.75?'good':frac>=.5?'mid':'low')+')">'+ok+'<span style="font-size:.5em;color:var(--muted)"> / '+nn+'</span></span><span class="stat-l">notes encertades</span></div>'
         +'<div class="verdict-s">'+tip+'</div></div>'
         +'<details class="details"><summary>Detalls</summary><div class="stats">'
         +'<div class="stat"><span class="stat-l">Temps afinat</span><b class="mono">'+Math.round(cd.inTune*100)+'%</b><span class="stat-l">a menys d’un quart de to</span></div>'
         +'<div class="stat"><span class="stat-l">Desviació mitjana</span><b class="mono">'+(m>0?'+':'')+m+' cèntims</b><span class="stat-l">'+tend+'</span></div>'
-        +'<div class="stat"><span class="stat-l">Durada cantada</span><b class="mono">tu '+dec(cd.tkSpan)+' s · original '+dec(cd.refSpan)+' s</b><span class="stat-l">'+(Math.abs(cd.tkSpan-cd.refSpan)<0.25?'mateix tempo':cd.tkSpan>cd.refSpan?'la cantes més lenta':'la cantes més ràpida')+'</span></div>'
+        +'<div class="stat"><span class="stat-l">Durada cantada</span><b class="mono">tu '+dec(cd.tkSpan)+' s · original '+dec(cd.refSpan)+' s</b><span class="stat-l">'+(Math.abs(cd.tkSpan-cd.refSpan)<Math.max(0.4,cd.refSpan*0.15)?'mateix tempo':cd.tkSpan>cd.refSpan?'una mica més lenta':'una mica més ràpida')+'</span></div>'
         +(cd.oct?'<div class="stat"><span class="stat-l">Octava</span><b>cantes '+Math.abs(cd.oct/12)+' octava '+(cd.oct<0?'per sota':'per sobre')+'</b><span class="stat-l">comparat a la mateixa octava</span></div>':'')
         +'</div></details>';
     }
