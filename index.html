@@ -36,7 +36,8 @@ button,select,input{font:inherit;color:inherit}
 .topbar .brand{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;min-width:0}
 .topbar .brand img{height:44px;width:auto;display:block}
 .topbar .brand span{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.topbar .loaders{margin-left:auto}
+.topbar .loaders{margin-left:auto;display:flex;gap:8px}
+.topbar .btn.ghost{border-color:var(--rk-tinta);color:var(--rk-tinta)}
 @media (max-width:560px){.topbar .brand span{font-size:16px}.topbar .brand img{height:34px}}
 .wrap{padding-top:16px}
 .start{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:48px 24px;border:2px dashed var(--rk-groc);background:#FFF7DC}
@@ -228,6 +229,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   <header class="topbar">
     <a class="brand" href="https://rockin.cat" target="_blank" rel="noopener"><img src="https://rockin.cat/wp-content/uploads/2022/07/rockin-logo.svg" alt="Rockin" onerror="this.outerHTML='&lt;b style=&quot;font-family:Lora,serif;font-size:30px;letter-spacing:.02em&quot;&gt;ROCKIN&lt;/b&gt;'"><span>Mirall de veu</span></a>
     <div class="loaders">
+      <button class="btn ghost" id="bExport" type="button" title="Desa la cançó, la veu separada, les frases i les preses en un fitxer .mirall" hidden>Desa la sessió</button>
       <label class="btn" for="fMix">Carrega una cançó</label>
       <input type="file" id="fMix" accept="audio/*" class="vh">
     </div>
@@ -239,7 +241,9 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     <p class="start-s">Un MP3, WAV o M4A de la cançó que vols treballar. Després separarem la veu i la dividirem en frases per cantar-les una a una.</p>
     <label class="btn start-btn" for="fMix">Tria un fitxer d’àudio</label>
     <button class="sbtn" id="bResume" type="button" hidden></button>
-    <p class="start-s small">O arrossega el fitxer aquí. La feina es desa en aquest navegador: si tanques la pàgina sense voler, la podràs recuperar.</p>
+    <label class="sbtn" for="fSess">Obre una sessió desada (.mirall)</label>
+    <input type="file" id="fSess" accept=".mirall" class="vh">
+    <p class="start-s small">O arrossega el fitxer aquí. La feina es desa en aquest navegador; per guardar-la per a un altre dia o un altre ordinador, fes servir «Desa la sessió».</p>
   </section>
 
   <section class="panel" id="songPanel" aria-label="Cançó" hidden>
@@ -688,20 +692,51 @@ const toI16=a=>{const o=new Int16Array(a.length);for(let i=0;i<a.length;i++){con
 const fromI16=a=>{const o=new Float32Array(a.length);for(let i=0;i<a.length;i++)o[i]=a[i]/0x8000;return o};
 let saveT=null,saving=false;
 function saveSoon(){if(!S.mix||S.demo||!S.file)return;clearTimeout(saveT);saveT=setTimeout(saveSession,1500)}
-async function saveSession(){
-  if(!S.mix||S.demo||!S.file||saving)return;saving=true;
-  try{
+function buildSession(){
     const takeOut=t=>({n:t.n,data:toI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,lat:t.lat,nudge:t.nudge,full:t.full||null});
-    const sess={v:1,savedAt:Date.now(),name:S.name,file:S.file,fileName:S.file.name,
+    return {v:1,savedAt:Date.now(),name:S.name,file:S.file,fileName:S.file.name,
       stem:S.stem?{L:toI16(S.stem.L),R:S.stem.L===S.stem.R?null:toI16(S.stem.R)}:null,sepBy:S.sepBy,approx:!!S.approx,
       period:S.period||null,dbShift:S.dbShift||0,meter:$('#meter').value,
       phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,lyr:p.lyr||'',takes:p.takes.map(takeOut)})),
       ghosts:S.ghosts||[],
       fullTakes:(S.fullTakes||[]).map(f=>({n:f.n,data:toI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,id:f.id})),
       opts:{back:$('#oBack').value,pre:$('#oPre').value,level:$('#oLevel').value,verb:$('#oVerb').value,times:$('#oTimes').value,gyou:S.gyou,gbase:S.gbase}};
-    await idbSet('last',sess);
-  }catch(e){console.warn(e)}finally{saving=false}
 }
+async function saveSession(){
+  if(!S.mix||S.demo||!S.file||saving)return;saving=true;
+  try{await idbSet('last',buildSession())}catch(e){console.warn(e)}finally{saving=false}
+}
+/* session file (.mirall): a small JSON header followed by the binary parts, so it can hold the song and the takes without blowing up */
+async function exportSession(){
+  if(!S.mix||!S.file)return;
+  const sess=buildSession(),parts=[],meta=JSON.parse(JSON.stringify(sess,(k,v)=>{
+    if(v instanceof Int16Array){parts.push(v);return {__bin:parts.length-1,len:v.length}}
+    if(v instanceof Blob){return undefined}
+    return v;}));
+  const fileBuf=await S.file.arrayBuffer();meta.fileType=S.file.type||'';meta.fileName=S.file.name;
+  const head=new TextEncoder().encode(JSON.stringify(meta)),magic=new TextEncoder().encode('MIRALL1\n');
+  const lens=new Uint32Array([head.length,fileBuf.byteLength,...parts.map(p=>p.byteLength)]);
+  const blob=new Blob([magic,new Uint32Array([lens.length]),lens,head,fileBuf,...parts.map(p=>new Uint8Array(p.buffer,p.byteOffset,p.byteLength))],{type:'application/octet-stream'});
+  saveBlob(blob,S.name+'.mirall');
+  toast('Sessió desada en un fitxer ('+Math.round(blob.size/1e6)+' MB). Obre’l amb «Obre una sessió» qualsevol dia.');
+}
+async function importSession(f){
+  try{
+    const buf=await f.arrayBuffer(),u8=new Uint8Array(buf);
+    if(new TextDecoder().decode(u8.subarray(0,8))!=='MIRALL1\n')throw new Error('no és un fitxer de sessió de Mirall de veu');
+    let o=8;const n=new Uint32Array(buf.slice(o,o+4))[0];o+=4;const lens=new Uint32Array(buf.slice(o,o+4*n));o+=4*n;
+    const meta=JSON.parse(new TextDecoder().decode(u8.subarray(o,o+lens[0])));o+=lens[0];
+    const fileBuf=buf.slice(o,o+lens[1]);o+=lens[1];
+    const parts=[];for(let i=2;i<n;i++){parts.push(new Int16Array(buf.slice(o,o+lens[i])));o+=lens[i]}
+    const hydrate=v=>{if(v&&typeof v==='object'){if('__bin'in v)return parts[v.__bin];for(const k in v)v[k]=hydrate(v[k])}return v};
+    hydrate(meta);
+    meta.file=new File([fileBuf],meta.fileName||'cançó',{type:meta.fileType||''});
+    $('#bResume').hidden=false;
+    await resumeSession(meta);
+  }catch(e){console.error(e);toast('No he pogut obrir aquesta sessió: '+errMsg(e))}
+}
+$('#fSess').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)importSession(f)});
+$('#bExport').addEventListener('click',exportSession);
 async function offerResume(){
   const sess=await idbGet('last');const b=$('#bResume');
   if(!sess||!sess.file){b.hidden=true;return}
@@ -737,7 +772,7 @@ async function resumeSession(sess){
 }
 
 /* ---------- start screen and drag & drop ---------- */
-function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;if(!has)$('#work').hidden=true}
+function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;$('#bExport').hidden=!has||S.demo;if(!has)$('#work').hidden=true}
 async function loadMixFile(f){
   if(!f)return;
   setStatus('Llegint '+f.name+'…');$('#startPanel').querySelector('.start-s').textContent='Llegint '+f.name+'…';
@@ -753,7 +788,7 @@ async function loadMixFile(f){
 }
 ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();$('#startPanel').classList.add('over')}}));
 ['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{$('#startPanel').classList.remove('over')}));
-document.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;e.preventDefault();if(!/^audio\//.test(f.type)&&!/\.(mp3|wav|m4a|aac|ogg|flac|aiff?)$/i.test(f.name)){toast('Això no sembla un fitxer d’àudio.');return}loadMixFile(f)});
+document.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;e.preventDefault();if(/\.mirall$/i.test(f.name)){importSession(f);return}if(!/^audio\//.test(f.type)&&!/\.(mp3|wav|m4a|aac|ogg|flac|aiff?)$/i.test(f.name)){toast('Això no sembla un fitxer d’àudio.');return}loadMixFile(f)});
 
 /* ---------- loading ---------- */
 function resample(x,from,to){if(from===to)return x;const n=Math.floor(x.length*to/from),y=new Float32Array(n),r=from/to;for(let i=0;i<n;i++){const p=i*r,a=Math.floor(p),f=p-a;y[i]=(x[a]||0)*(1-f)+(x[a+1]||0)*f}return y}
