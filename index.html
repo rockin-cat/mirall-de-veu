@@ -369,6 +369,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
         <div class="opts">
           <label for="oTimes">Escoltes al cicle <select id="oTimes"><option selected>1</option><option>2</option><option>3</option></select></label>
           <label for="oBack">Mentre cantes sona <select id="oBack"><option value="guide" selected>la base + veu guia fluixa</option><option value="base">la base (sense veu)</option><option value="none">res (a cappella)</option></select></label>
+          <label for="oRate">Velocitat <select id="oRate"><option value="1" selected>normal</option><option value="0.85">85 %</option><option value="0.7">70 %</option><option value="0.55">55 %</option></select></label>
           <label for="oPre">Entrada <select id="oPre"><option value="0">entra directament</option><option value="1" selected>1 compàs d’entrada</option><option value="2">2 compassos d’entrada</option></select></label>
           <span class="meter"><button class="sbtn" id="bMic" type="button">Prova el micròfon</button><span class="meter-bar"><i id="meterI"></i></span></span>
         </div>
@@ -412,6 +413,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   <section class="panel help">
     <h3>Com funciona</h3>
     <p><b>1. Carrega una cançó</b> (MP3, WAV, M4A). <b>2. Separa la veu</b>: el programa fa servir Demucs, un model obert, dins del teu navegador; la cançó no surt del teu ordinador. <b>3. Treballa frase a frase</b>: les frases i la melodia es treuen només de la pista de veu. Escolta la frase, repeteix-la cantant sobre la base i mira quines notes has encertat.</p>
+    <p><b>Velocitat.</b> Pots escoltar i cantar la frase més lenta (85, 70 o 55 %) sense que canviï el to; la comparació ho té en compte. La cançó sencera sempre va a velocitat normal.</p>
     <p><b>Canta amb auriculars.</b> Si la base surt pels altaveus, el micròfon també la grava i la comparació es confon. Amb auriculars Bluetooth, grava amb el micròfon de l’ordinador, no amb el dels auriculars: el retard es corregeix sol en acabar la presa.</p>
     <p><b>A la comparació,</b> clica una barra de nota per sentir aquella nota: primer l’original i després tu. Clica en un espai buit per triar des d’on sona la reproducció (l’original, tu o les dues); doble clic per tornar al principi. Els dos volums («La teva veu» i «Base») valen per a totes les escoltes de la teva veu i es poden moure mentre sona. La reverb només s’aplica en escoltar-te; el WAV que descarregues és la veu neta.</p>
     <p><b>Dreceres:</b> <kbd>Espai</kbd> escolta · <kbd>R</kbd> repeteix · <kbd>Intro</kbd> cicle · <kbd>←</kbd> <kbd>→</kbd> frase anterior/següent · <kbd>Esc</kbd> atura. Les preses es guarden només mentre la pàgina està oberta; descarrega-les en WAV si les vols conservar.</p>
@@ -693,7 +695,7 @@ const fromI16=a=>{const o=new Float32Array(a.length);for(let i=0;i<a.length;i++)
 let saveT=null,saving=false;
 function saveSoon(){if(!S.mix||S.demo||!S.file)return;clearTimeout(saveT);saveT=setTimeout(saveSession,1500)}
 function buildSession(){
-    const takeOut=t=>({n:t.n,data:toI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,lat:t.lat,nudge:t.nudge,full:t.full||null});
+    const takeOut=t=>({n:t.n,data:toI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,rate:t.rate||1,lat:t.lat,nudge:t.nudge,full:t.full||null});
     return {v:1,savedAt:Date.now(),name:S.name,file:S.file,fileName:S.file.name,
       stem:S.stem?{L:toI16(S.stem.L),R:S.stem.L===S.stem.R?null:toI16(S.stem.R)}:null,sepBy:S.sepBy,approx:!!S.approx,
       period:S.period||null,dbShift:S.dbShift||0,meter:$('#meter').value,
@@ -756,7 +758,7 @@ async function resumeSession(sess){
     // rebuild analysis, then put the saved phrases back
     S.phrases=[];loadSong(false);
     if(sess.period&&S.onset){S.period=sess.period;$('#meter').value=sess.meter||'4';analyseRhythm(true);S.dbShift=sess.dbShift||0}
-    S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,lyr:p.lyr||'',ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
+    S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,lyr:p.lyr||'',ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,rate:t.rate||1,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
     S.ghosts=sess.ghosts||[];
     S.fullTakes=(sess.fullTakes||[]).map(f=>({id:f.id||uid++,n:f.n,data:fromI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,phr:[]}));
     S.fullTake=S.fullTakes[S.fullTakes.length-1]||null;$('#bFullPlay').hidden=!S.fullTake;
@@ -1020,15 +1022,15 @@ function playChannels(chs,sr,when,pan,opts){
   if(opts.reverb>0){const conv=c.createConvolver();conv.buffer=reverbIR();const wet=c.createGain();wet.gain.value=opts.reverb;node.connect(conv);conv.connect(wet);wet.connect(c.destination)}
   const t=when||c.currentTime+0.03,off=Math.max(0,opts.offset||0);src.start(t,off);playing.push(src);
   src.onended=()=>{playing=playing.filter(x=>x!==src)};
-  if(opts.onPhrase!=null)S.tplay={t0:t,from:opts.onPhrase,to:opts.onPhrase+(chs[0].length/sr-off)};
+  if(opts.onPhrase!=null)S.tplay={t0:t,from:opts.onPhrase,to:opts.onPhrase+(chs[0].length/sr-off)*(opts.rate||1),rate:opts.rate||1};
   return{src,t};
 }
 const verbAmt=()=>+($('#oVerb').value||0);
 // play the selected take from a phrase-relative time, with reverb; returns the scheduled start
 function playTake(t,ph,fromPh,when,pan){
-  const cd=compareData(ph,t),off=cd.off;         // take time = phrase time + off
-  const from=Math.max(0,(fromPh||0)+off);
-  return playChannels([t.data],t.sr,when,pan,{offset:from,reverb:verbAmt(),onPhrase:from-off,gain:S.gyou,role:'you'});
+  const cd=compareData(ph,t),off=cd.off,rt=cd.rate;   // take time = phrase time / rate + off
+  const from=Math.max(0,(fromPh||0)/rt+off);
+  return playChannels([t.data],t.sr,when,pan,{offset:from,reverb:verbAmt(),onPhrase:(from-off)*rt,rate:rt,gain:S.gyou,role:'you'});
 }
 function segmentMix(s,e,gv,ga,vFrom){
   const a=Math.max(0,Math.round(s*S.sr)),b=Math.min(S.len,Math.round(e*S.sr)),n=Math.max(1,b-a);
@@ -1037,11 +1039,42 @@ function segmentMix(s,e,gv,ga,vFrom){
   return[L,R];
 }
 // the base alone, at the "Base" level of the mixer, adjustable while it plays
-function playBase(s,e,when){const r=playChannels(segmentMix(s,e,0,1),S.sr,when,null,{gain:S.gbase,role:'base'});S.play={t0:r.t,from:s,to:e};return r}
-function playSegment(s,e,gv,ga,when,pan,vFrom){const r=playChannels(segmentMix(s,e,gv,ga,vFrom),S.sr,when,pan);S.play={t0:r.t,from:s,to:e};return r}
+/* time stretch without changing pitch (WSOLA): rate 0.7 = 70 % speed. Results are cached per segment. */
+const stretchCache=new Map();
+function stretchChannels(chs,rate){
+  if(rate===1)return chs;
+  const n=chs[0].length,N=2048,Hs=512,Ha=Hs*rate,outLen=Math.floor(n/rate),delta=360;
+  const win=new Float32Array(N);for(let i=0;i<N;i++)win[i]=0.5-0.5*Math.cos(2*Math.PI*i/N);
+  const mono=new Float32Array(n);for(let i=0;i<n;i++){let v=0;for(const c of chs)v+=c[i];mono[i]=v/chs.length}
+  const outs=chs.map(()=>new Float32Array(outLen+N)),norm=new Float32Array(outLen+N);
+  let prevIn=-1;
+  for(let k=0;(k*Hs)<outLen;k++){
+    const nominal=Math.round(k*Ha);let best=nominal;
+    if(prevIn>=0){ // choose the input offset whose continuation best matches where the previous frame leads
+      const target=prevIn+Hs;let bc=-Infinity;
+      for(let d=-delta;d<=delta;d+=4){const cand=nominal+d;if(cand<0||cand+N>n||target+N>n)continue;let c=0;for(let i=0;i<N;i+=4)c+=mono[cand+i]*mono[target+i];if(c>bc){bc=c;best=cand}}
+    }
+    if(best+N>n)best=Math.max(0,n-N);
+    const o=k*Hs;
+    for(let ci=0;ci<chs.length;ci++){const x=chs[ci],y=outs[ci];for(let i=0;i<N&&o+i<y.length;i++)y[o+i]+=x[best+i]*win[i]}
+    for(let i=0;i<N&&o+i<norm.length;i++)norm[o+i]+=win[i];
+    prevIn=best;
+  }
+  return outs.map(y=>{const z=new Float32Array(outLen);for(let i=0;i<outLen;i++)z[i]=norm[i]>1e-3?y[i]/norm[i]:0;return z});
+}
+function segmentStretched(s,e,gv,ga,vFrom,rate){
+  const key=[s.toFixed(3),e.toFixed(3),gv,ga,vFrom==null?'':vFrom.toFixed(3),rate].join('|');
+  if(stretchCache.has(key))return stretchCache.get(key);
+  const out=stretchChannels(segmentMix(s,e,gv,ga,vFrom),rate);
+  if(stretchCache.size>24)stretchCache.delete(stretchCache.keys().next().value);
+  stretchCache.set(key,out);return out;
+}
+function playBase(s,e,when,rate){rate=rate||1;const r=playChannels(rate===1?segmentMix(s,e,0,1):segmentStretched(s,e,0,1,null,rate),S.sr,when,null,{gain:S.gbase,role:'base'});S.play={t0:r.t,from:s,to:e,rate};return r}
+function playSegment(s,e,gv,ga,when,pan,vFrom,rate){rate=rate||1;const r=playChannels(rate===1?segmentMix(s,e,gv,ga,vFrom):segmentStretched(s,e,gv,ga,vFrom,rate),S.sr,when,pan);S.play={t0:r.t,from:s,to:e,rate};return r}
 function scheduleEntry(en,start,end){
   // clicks on each beat of the lead-in, accented on 1; the count is shown big in the status line
-  S.countIn=en.clicks.length?{clicks:en.clicks.map(k=>({t:start+(k.t-en.from),n:k.n})),end,meter:+$('#meter').value,shown:-1}:null;
+  const rate=rateOpt();
+  S.countIn=en.clicks.length?{clicks:en.clicks.map(k=>({t:start+(k.t-en.from)/rate,n:k.n})),end,meter:+$('#meter').value,shown:-1}:null;
 }
 function beep(t,f=1000){const c=ac(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.25,t+0.005);g.gain.exponentialRampToValueAtTime(0.001,t+0.09);o.connect(g).connect(c.destination);o.start(t);o.stop(t+0.1)}
 
@@ -1091,10 +1124,12 @@ $('#bMic').addEventListener('click',async()=>{try{await ensureMic();toast('Micr�
 /* ---------- actions ---------- */
 async function listen(){
   const ph=curPh();if(!ph)return;cancel();const id=runId;S.inCycle=false;
-  const en=entryFor(ph),start=ac().currentTime+0.05,lead=ph.start-en.from;
-  playSegment(en.from,ph.end,S.gv,S.ga,start,null,ph.start);scheduleEntry(en,start,start+lead);
-  setPhase('listen','Escoltant la frase '+(S.cur+1)+'…');
-  await waitUntil(start+lead+(ph.end-ph.start)+0.05,id);if(id===runId)setPhase(null);
+  const rate=rateOpt(),en=entryFor(ph),lead=(ph.start-en.from)/rate;
+  if(rate<1){setPhase('listen','Preparant la frase a '+Math.round(rate*100)+' %…');await sleep(10)}
+  const start=ac().currentTime+0.05;
+  playSegment(en.from,ph.end,S.gv,S.ga,start,null,ph.start,rate);scheduleEntry(en,start,start+lead);
+  setPhase('listen','Escoltant la frase '+(S.cur+1)+(rate<1?' a '+Math.round(rate*100)+' %':'')+'…');
+  await waitUntil(start+lead+(ph.end-ph.start)/rate+0.05,id);if(id===runId)setPhase(null);
 }
 async function recordOnly(){
   const ph=curPh();if(!ph)return;cancel();const id=runId;S.inCycle=false;
@@ -1106,26 +1141,29 @@ async function cycle(){
   try{await ensureMic()}catch(e){S.inCycle=false;return micFail(e)}
   const times=+$('#oTimes').value;
   for(let k=0;k<times;k++){
-    const en=entryFor(ph),start=ac().currentTime+(k?0.35:0.05),lead=ph.start-en.from;
-    playSegment(en.from,ph.end,S.gv,S.ga,start,null,ph.start);scheduleEntry(en,start,start+lead);
+    const rate=rateOpt(),en=entryFor(ph),lead=(ph.start-en.from)/rate;
+    if(rate<1&&!k){setPhase('listen','Preparant la frase a '+Math.round(rate*100)+' %…');await sleep(10)}
+    const start=ac().currentTime+(k?0.35:0.05);
+    playSegment(en.from,ph.end,S.gv,S.ga,start,null,ph.start,rate);scheduleEntry(en,start,start+lead);
     setPhase('listen','Escolta '+(k+1)+' de '+times+'…');
-    if(!await waitUntil(start+lead+(ph.end-ph.start)+0.05,id)){S.inCycle=false;return}
+    if(!await waitUntil(start+lead+(ph.end-ph.start)/rate+0.05,id)){S.inCycle=false;return}
   }
   await doRecord(ph,id);S.inCycle=false;
 }
 async function doRecord(ph,id){
-  const c=ac(),mode=$('#oBack').value,withAcc=mode!=='none',dur=ph.end-ph.start;
+  const c=ac(),mode=$('#oBack').value,withAcc=mode!=='none',rate=rateOpt(),dur=(ph.end-ph.start)/rate;
   S.armed=true;S.take=null;S.cmpCursor=null;renderDesk();
-  const en=entryFor(ph),lead=ph.start-en.from;
+  const en=entryFor(ph),lead=(ph.start-en.from)/rate;
+  if(withAcc&&rate<1){setPhase('rec','Preparant la base a '+Math.round(rate*100)+' %…');await sleep(10);segmentStretched(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?0.3:0,1,ph.start,rate)}
   let start=c.currentTime+0.15;
   if(!en.clicks.length&&lead<0.5){start+=0.9;setPhase('rec','Prepara’t…')}
   const t0=start+lead;
-  if(withAcc)playSegment(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?0.3:0,1,start,null,ph.start);
+  if(withAcc)playSegment(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?0.3:0,1,start,null,ph.start,rate);
   scheduleEntry(en,start,t0);
   setPhase('rec',lead>0.3?'Entra la base… compta i entra a temps':'Prepara’t…');
   const len=withAcc?dur+1.3:dur*1.3+1.6;   // keep recording a while after the phrase ends, so held last notes are not cut
   await waitUntil(t0-0.03,id);
-  S.live=[];S.liveMax=0;S.liveLat=withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0;rec.chunks=[];rec.active=true;S.recInfo={t0,len};
+  S.live=[];S.liveMax=0;S.liveLat=withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0;rec.chunks=[];rec.active=true;S.recInfo={t0,len,rate};
   setPhase('rec','<span class="dot"></span><span>Canta! Gravant <span class="mono" id="recT">0,0</span> s</span><span class="progress"><i id="recBar"></i></span><button class="sbtn" type="button" onclick="cancel()">Atura</button>');
   await waitUntil(t0+len,id);
   const endT=Math.min(c.currentTime,t0+len);
@@ -1138,7 +1176,7 @@ async function doRecord(ph,id){
   const data=all.slice(a,a+want);
   if(data.length<sr*0.5){setPhase(null,'');return}
   const n=(ph.takes.reduce((m,t)=>Math.max(m,t.n),0))+1;
-  const take={id:uid++,n,data,sr,withAcc,mode,lat:withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0,nudge:0,track:null,score:null};
+  const take={id:uid++,n,data,sr,withAcc,mode,rate,lat:withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0,nudge:0,track:null,score:null};
   setPhase(null,'Analitzant…');await sleep(20);
   take.track=pitchTrack(take.data,take.sr);
   ph.takes.push(take);S.take=take;saveSoon();
@@ -1227,22 +1265,22 @@ function compareData(ph,take){
   const ref=refTrack(ph),tk=take.track||(take.track=pitchTrack(take.data,take.sr));
   if(take.autoOff==null||take.autoKey!==ref){
     // start from latency (sung over the base) or from the first sung note (a cappella), then fine-tune by matching the melody
-    const g=take.withAcc?take.lat:onset(tk)-onset(ref),fold=$('#oOct').checked;
+    const rt=take.rate||1,g=take.withAcc?take.lat:onset(tk)-onset(ref)/rt,fold=$('#oOct').checked;
     let best=g,bs=-1;
     for(let o=g-0.5;o<=g+0.5;o+=0.01){
       let sc=0;
-      for(let f=0;f<ref.midi.length;f+=2){const r=ref.midi[f];if(isNaN(r))continue;const v=tk.midi[Math.round((f*ref.hop+o)/tk.hop)];if(v===undefined||isNaN(v))continue;
+      for(let f=0;f<ref.midi.length;f+=2){const r=ref.midi[f];if(isNaN(r))continue;const v=tk.midi[Math.round((f*ref.hop/rt+o)/tk.hop)];if(v===undefined||isNaN(v))continue;
         let d=v-r;if(fold)d=((d%12)+18)%12-6;if(Math.abs(d)<0.5)sc++}
       const adj=sc-Math.abs(o-g)*2;
       if(adj>bs){bs=adj;best=o}
     }
     take.autoOff=best;take.autoKey=ref;
   }
-  let off=take.autoOff+take.nudge;
+  let off=take.autoOff+take.nudge;const rate=take.rate||1;
   const pairs=[];
   for(let f=0;f<ref.midi.length;f++){
     const r=ref.midi[f];if(isNaN(r))continue;
-    const j=Math.round((f*ref.hop+off)/tk.hop),v=tk.midi[j];
+    const j=Math.round((f*ref.hop/rate+off)/tk.hop),v=tk.midi[j];
     if(v!==undefined&&!isNaN(v))pairs.push([r,v]);
   }
   let oct=0;
@@ -1250,9 +1288,9 @@ function compareData(ph,take){
   let inT=0,sum=0,cnt=0;
   for(const[r,v]of pairs){const c=(v-oct-r)*100;if(Math.abs(c)<=50)inT++;if(Math.abs(c)<300){sum+=c;cnt++}}
   // sung span: from the first to the last real note (≥120 ms, stable pitch) inside the phrase window, so breaths, bleed and the recording tail don't count
-  const rn=noteSeg(ref).filter(n=>n.t1-n.t0>=0.12),tn=noteSeg(tk).map(n=>({t0:n.t0-off,t1:n.t1-off,m:n.m})).filter(n=>n.t1-n.t0>=0.12&&n.t1>-0.3&&n.t0<ref.dur+0.3);
+  const rn=noteSeg(ref).filter(n=>n.t1-n.t0>=0.12),tn=noteSeg(tk).map(n=>({t0:(n.t0-off)*rate,t1:(n.t1-off)*rate,m:n.m})).filter(n=>n.t1-n.t0>=0.12&&n.t1>-0.3&&n.t0<ref.dur+0.3);
   const span=a=>a.length?a[a.length-1].t1-a[0].t0:0;
-  const res={ref,tk,off,oct,n:pairs.length,inTune:pairs.length?inT/pairs.length:0,mean:cnt?sum/cnt:0,refSpan:span(rn),tkSpan:span(tn),tkNotes:tn.length,refNotes:rn.length};
+  const res={ref,tk,off,oct,rate,n:pairs.length,inTune:pairs.length?inT/pairs.length:0,mean:cnt?sum/cnt:0,refSpan:span(rn),tkSpan:span(tn),tkNotes:tn.length,refNotes:rn.length};
   take.score=res.n>10?Math.round(res.inTune*100):null;
   if(res.n>10){const nh=noteHits(noteSeg(ref),(()=>{const pts=[];for(let f=0;f<tk.midi.length;f++)pts.push({t:f*tk.hop-off,m:tk.midi[f]-oct});return pts})());if(nh&&nh.length)take.score=Math.round(100*nh.filter(Boolean).length/nh.length)}
   return res;
@@ -1337,7 +1375,7 @@ function drawSong(){
   if(S.cursor>=V.v0&&S.cursor<=V.v1){g.fillStyle=tok('--ink');g.fillRect(X(S.cursor)-0.5,0,1,h);
     g.beginPath();const cx=X(S.cursor);g.moveTo(cx-5,0);g.lineTo(cx+5,0);g.lineTo(cx,6);g.fill()}
   let pos=null;
-  if(S.play){pos=S.play.from+(ac().currentTime-S.play.t0);if(pos>S.play.to+0.05){S.play=null;pos=null}}
+  if(S.play){pos=S.play.from+(ac().currentTime-S.play.t0)*(S.play.rate||1);if(pos>S.play.to+0.05){S.play=null;pos=null}}
   if(pos!=null&&pos>=S.play.from){keepInView(pos);g.fillStyle=tok('--you');g.fillRect(X(pos)-1,0,2,h);$('#clock').textContent=fmt(pos)}
   else $('#clock').textContent=fmt(S.cursor);
 }
@@ -1388,7 +1426,7 @@ function youPoints(ph){
   }
   const take=S.take&&ph.takes.includes(S.take)?S.take:null;if(!take)return null;
   const cd=compareData(ph,take),pts=[];
-  for(let f=0;f<cd.tk.midi.length;f++)pts.push({t:f*cd.tk.hop-cd.off,m:cd.tk.midi[f]-cd.oct});
+  for(let f=0;f<cd.tk.midi.length;f++)pts.push({t:(f*cd.tk.hop-cd.off)*cd.rate,m:cd.tk.midi[f]-cd.oct});
   return pts;
 }
 const LEVELS={easy:{tol:1.0,cover:0.3,label:'Fàcil'},mid:{tol:0.6,cover:0.45,label:'Mitjà'},hard:{tol:0.35,cover:0.55,label:'Exigent'}};
@@ -1405,7 +1443,7 @@ function drawCompare(){
   const ph=curPh();if(!ph||!S.mix)return;
   const ref=refTrack(ph),notes=noteSeg(ref),pts=youPoints(ph),hits=noteHits(notes,pts);
   let T=Math.max(ref.dur,0.5);
-  if(S.recInfo)T=Math.max(T,S.recInfo.len-S.liveLat);
+  if(S.recInfo)T=Math.max(T,S.recInfo.len*(S.recInfo.rate||1)-S.liveLat);
   else if(pts&&pts.length){for(let i=pts.length-1;i>=0;i--)if(!isNaN(pts[i].m)){T=Math.max(T,pts[i].t+0.2);break}}
   const ms=notes.map(n=>n.m);if(!ms.length)ref.midi.forEach(v=>{if(!isNaN(v))ms.push(Math.round(v))});
   if(pts)for(const p of pts)if(!isNaN(p.m)&&p.t>=0&&p.t<=T)ms.push(p.m);
@@ -1455,8 +1493,8 @@ function drawCompare(){
   // playhead while listening, recording or playing a take
   let th=null;
   if(S.recInfo&&AC)th=AC.currentTime-S.recInfo.t0-S.liveLat;
-  else if(S.play&&AC){const pos=S.play.from+(AC.currentTime-S.play.t0);if(pos>=ph.start&&pos<=ph.end+0.3)th=pos-ph.start}
-  else if(S.tplay&&AC){const pos=S.tplay.from+(AC.currentTime-S.tplay.t0);if(pos>S.tplay.to+0.05)S.tplay=null;else if(pos>=S.tplay.from)th=pos}
+  else if(S.play&&AC){const pos=S.play.from+(AC.currentTime-S.play.t0)*(S.play.rate||1);if(pos>=ph.start&&pos<=ph.end+0.3)th=pos-ph.start}
+  else if(S.tplay&&AC){const pos=S.tplay.from+(AC.currentTime-S.tplay.t0)*(S.tplay.rate||1);if(pos>S.tplay.to+0.05)S.tplay=null;else if(pos>=S.tplay.from)th=pos}
   if(th!=null&&th>=0&&th<=T){const x=X(th);g.fillStyle=STAGE.head;g.fillRect(x-1,top,2,pH);g.beginPath();g.moveTo(x-6,top);g.lineTo(x+6,top);g.lineTo(x,top+8);g.fill()}
   S.lastHits=hits?{ok:hits.filter(Boolean).length,n:hits.length}:null;
 }
@@ -1479,7 +1517,7 @@ function liveFeed(msg){
     let best=-1;for(let t=tMin;t<=tMax;t++){if(dd[t]<0.15){while(t+1<=tMax&&dd[t+1]<dd[t])t++;best=t;break}}
     if(best>1&&best<tMax){const a=dd[best-1],b=dd[best],cc=dd[best+1],den=a+cc-2*b;const tau=den>0?best+(a-cc)/(2*den):best;m=69+12*Math.log2(fs/tau/440)}
   }
-  S.live.push({t:msg.t+d.length/sr-S.recInfo.t0-0.02,m});
+  S.live.push({t:(msg.t+d.length/sr-S.recInfo.t0-0.02)*(S.recInfo.rate||1),m});
 }
 
 /* ---------- rendering ---------- */
@@ -1534,7 +1572,7 @@ function renderDesk(){
   }
   $('#stats').innerHTML=html;
   // takes
-  $('#tlist').innerHTML=ph&&ph.takes.length?ph.takes.slice().reverse().map(t=>'<li class="take'+(t===S.take?' sel':'')+'" data-id="'+t.id+'"><button class="take-main" type="button" data-a="sel"><b>Presa '+t.n+'</b>'+chipFor(t.score)+'<small>'+dec(t.data.length/t.sr)+' s · '+(t.mode==='full'?'de la sencera':t.mode==='guide'?'amb base i guia':t.withAcc?'amb base':'a cappella')+'</small></button><button class="sbtn" type="button" data-a="play">▶ Escolta</button><button class="sbtn" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del" aria-label="Elimina la presa '+t.n+'">Elimina</button></li>').join('')
+  $('#tlist').innerHTML=ph&&ph.takes.length?ph.takes.slice().reverse().map(t=>'<li class="take'+(t===S.take?' sel':'')+'" data-id="'+t.id+'"><button class="take-main" type="button" data-a="sel"><b>Presa '+t.n+'</b>'+chipFor(t.score)+'<small>'+dec(t.data.length/t.sr)+' s · '+(t.mode==='full'?'de la sencera':t.mode==='guide'?'amb base i guia':t.withAcc?'amb base':'a cappella')+(t.rate&&t.rate<1?' · a '+Math.round(t.rate*100)+' %':'')+'</small></button><button class="sbtn" type="button" data-a="play">▶ Escolta</button><button class="sbtn" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del" aria-label="Elimina la presa '+t.n+'">Elimina</button></li>').join('')
     :'<li class="empty">Les teves gravacions d’aquesta frase apareixeran aquí.</li>';
   drawCompare();
 }
@@ -1561,7 +1599,7 @@ $('#oSnap').addEventListener('change',()=>{if($('#oSnap').checked)snapPhrases();
 document.querySelectorAll('[data-mix]').forEach(b=>b.addEventListener('click',()=>{
   const[v,a]=b.dataset.mix.split(',').map(Number);
   $('#gVoice').value=v;$('#gAcc').value=a;$('#gVoice').dispatchEvent(new Event('input'));$('#gAcc').dispatchEvent(new Event('input'));
-  if(S.mix){const from=S.play?Math.max(S.play.from,S.play.from+(ac().currentTime-S.play.t0)):S.cursor;cancel();S.cursor=from;playSegment(from,Math.min(S.len/S.sr,from+20),S.gv,S.ga)}
+  if(S.mix){const from=S.play?Math.max(S.play.from,S.play.from+(ac().currentTime-S.play.t0)*(S.play.rate||1)):S.cursor;cancel();S.cursor=from;playSegment(from,Math.min(S.len/S.sr,from+20),S.gv,S.ga)}
 }));
 $('#plist').addEventListener('click',e=>{
   const d=e.target.closest('.pdel');
@@ -1601,7 +1639,8 @@ $('#bDetect').addEventListener('click',()=>{
   delete $('#bDetect').dataset.ok;$('#bDetect').textContent='Torna a detectar';
   cancel();detect();S.cur=S.phrases.length?0:-1;S.take=null;renderAll();toast(S.phrases.length+' frases detectades.');
 });
-['oBack','oPre','oVerb','oTimes','meter'].forEach(id=>$('#'+id).addEventListener('change',saveSoon));
+['oBack','oPre','oVerb','oTimes','meter','oRate'].forEach(id=>$('#'+id).addEventListener('change',saveSoon));
+const rateOpt=()=>+$('#oRate').value||1;
 $('#oLevel').addEventListener('change',()=>{S.phrases.forEach(p=>p.takes.forEach(t=>{t.autoOff=null;compareData(p,t)}));renderPhrases();renderDesk()});
 $('#oOct').addEventListener('change',()=>{S.phrases.forEach(p=>p.takes.forEach(t=>t.autoOff=null));renderDesk()});
 $('#oNudge').addEventListener('input',e=>{if(!S.take)return;S.take.nudge=+e.target.value;renderDesk()});
@@ -1700,8 +1739,8 @@ const cmpFrom=()=>S.cmpCursor||0;
 $('#cRef').addEventListener('click',()=>{const ph=curPh();if(!ph)return;cancel();playSegment(ph.start+cmpFrom(),ph.end,S.gv,S.ga)});
 // your take, with the base underneath (unless "Amb la base" is off)
 function playYou(t,ph,from){
-  const base=ac().currentTime+0.06;
-  if(S.gbase>0)playBase(ph.start+from,Math.min(S.len/S.sr,ph.end+1.2),base);
+  const base=ac().currentTime+0.06,rt=t.rate||1;
+  if(S.gbase>0)playBase(ph.start+from,Math.min(S.len/S.sr,ph.end+1.2),base,rt);
   return playTake(t,ph,from,base);
 }
 $('#cYou').addEventListener('click',()=>{const ph=curPh();if(!ph||!S.take)return;cancel();playYou(S.take,ph,cmpFrom())});
@@ -1714,8 +1753,9 @@ $('#cAlt').addEventListener('click',async()=>{
 $('#cBoth').addEventListener('click',()=>{
   const ph=curPh(),t=S.take;if(!ph||!t)return;cancel();
   const base=ac().currentTime+0.06,from=cmpFrom();
-  playSegment(ph.start+from,ph.end,S.gv,0,base,-0.85);
-  if(S.gbase>0)playBase(ph.start+from,ph.end,base);
+  const rt=t.rate||1;
+  playSegment(ph.start+from,ph.end,S.gv,0,base,-0.85,null,rt);
+  if(S.gbase>0)playBase(ph.start+from,ph.end,base,rt);
   playTake(t,ph,from,base,0.85);
 });
 // click on the stage to choose where playback starts; double-click to clear
@@ -1743,7 +1783,7 @@ async function playNote(i){
   if(!await waitUntil(t0+len+0.3,id)){S.notePlay=null;return}
   if(S.take&&ph.takes.includes(S.take)){
     S.notePlay={i,who:'you'};
-    const cd=compareData(ph,S.take),buf=slice(S.take.data,S.take.sr,Math.max(0,from+cd.off));
+    const cd=compareData(ph,S.take),buf=slice(S.take.data,S.take.sr,Math.max(0,from/cd.rate+cd.off));
     if(buf.length>100)playChannels([buf],S.take.sr,c.currentTime+0.02,null,{reverb:verbAmt(),gain:S.gyou,role:'you'});
     if(!await waitUntil(c.currentTime+len+0.15,id)){S.notePlay=null;return}
   }
