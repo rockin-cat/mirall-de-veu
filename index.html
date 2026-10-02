@@ -130,9 +130,6 @@ details.detect summary{cursor:pointer;color:var(--muted);font-weight:700}
 .ptime{font-family:var(--mono);font-size:12px}
 .psub{font-size:11px;color:var(--muted);grid-column:2}
 .plyr{grid-column:2/4;font-size:13px;line-height:1.3;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lyr-btn{margin:0 4px 8px;width:calc(100% - 8px)}
-.lyr{display:flex;flex-direction:column;gap:8px;margin:0 4px 10px}
-.lyr textarea{width:100%;font:13px/1.4 var(--body);border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--panel);color:var(--ink);resize:vertical}
 .pline{font-family:var(--display);font-size:20px;line-height:1.25;margin:4px 0 0;color:var(--ink);max-width:60ch}
 .pline input{font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px dashed var(--line);width:100%;padding:2px 0}
 .pline input:focus{outline:0;border-bottom-color:var(--ink)}
@@ -341,12 +338,6 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   <section class="work" id="work">
     <aside class="panel phrases" aria-label="Frases">
       <h2>Frases <span class="mono stat-l" id="nPhr"></span></h2>
-      <button class="sbtn lyr-btn" id="bLyrics" type="button">Enganxa la lletra…</button>
-      <div class="lyr" id="lyrBox" hidden>
-        <textarea id="lyrText" rows="8" placeholder="Una línia per frase, en ordre. Les línies buides i els títols entre claudàtors ([Tornada]) s’ignoren."></textarea>
-        <div class="group"><button class="btn" id="lyrApply" type="button">Reparteix entre les frases</button><button class="sbtn" id="lyrClose" type="button">Tanca</button></div>
-        <p class="stat-l" id="lyrInfo"></p>
-      </div>
       <ol class="plist" id="plist"></ol>
       <p class="empty" id="ghostNote" hidden></p>
     </aside>
@@ -358,7 +349,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
             <div class="eyebrow">Frase</div>
             <h2 id="pTitle">—</h2>
             <p class="meta mono" id="pTime"></p>
-            <p class="pline"><input id="pLyr" type="text" placeholder="Lletra d’aquesta frase (escriu-la o enganxa tota la lletra a l’esquerra)" aria-label="Lletra de la frase"></p>
+            <p class="pline"><input id="pLyr" type="text" placeholder="Títol de la frase (per exemple, la lletra)" aria-label="Títol de la frase"></p>
           </div>
           <div class="nudges">
             <div class="group"><button class="sbtn" id="bPrev" type="button" aria-label="Frase anterior">←</button><button class="sbtn" id="bNext" type="button" aria-label="Frase següent">→</button></div>
@@ -704,7 +695,6 @@ async function saveSession(){
     const sess={v:1,savedAt:Date.now(),name:S.name,file:S.file,fileName:S.file.name,
       stem:S.stem?{L:toI16(S.stem.L),R:S.stem.L===S.stem.R?null:toI16(S.stem.R)}:null,sepBy:S.sepBy,approx:!!S.approx,
       period:S.period||null,dbShift:S.dbShift||0,meter:$('#meter').value,
-      lyrics:S.lyrics||'',
       phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,lyr:p.lyr||'',takes:p.takes.map(takeOut)})),
       ghosts:S.ghosts||[],
       fullTakes:(S.fullTakes||[]).map(f=>({n:f.n,data:toI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,id:f.id})),
@@ -731,7 +721,6 @@ async function resumeSession(sess){
     // rebuild analysis, then put the saved phrases back
     S.phrases=[];loadSong(false);
     if(sess.period&&S.onset){S.period=sess.period;$('#meter').value=sess.meter||'4';analyseRhythm(true);S.dbShift=sess.dbShift||0}
-    S.lyrics=sess.lyrics||'';
     S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,lyr:p.lyr||'',ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
     S.ghosts=sess.ghosts||[];
     S.fullTakes=(sess.fullTakes||[]).map(f=>({id:f.id||uid++,n:f.n,data:fromI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,phr:[]}));
@@ -756,7 +745,7 @@ async function loadMixFile(f){
   try{b=await ac().decodeAudioData(await f.arrayBuffer())}
   catch(err){setStatus('');$('#startPanel').querySelector('.start-s').textContent='No he pogut llegir «'+f.name+'» ('+errMsg(err)+'). Prova amb un altre format (MP3, WAV, M4A) o amb Chrome.';toast('No he pogut llegir aquest fitxer d’àudio.');return}
   try{
-    cancel();S.mix=toLR(b);S.file=f;S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;S.fullTakes=[];S.lyrics='';$('#bFullPlay').hidden=true;$('#fullList').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
+    cancel();S.mix=toLR(b);S.file=f;S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;S.fullTakes=[];$('#bFullPlay').hidden=true;$('#fullList').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
   }catch(err){console.error(err);setStatus('');toast('He llegit la cançó però ha fallat l’anàlisi: '+errMsg(err));return}
   // separate straight away; the step-2 panel shows progress and the alternatives
   if(IS_FILE&&IS_SAFARI)toast('Cançó carregada. Safari no pot separar la veu des d’un fitxer del disc: obre l’eina amb Chrome o des de la web.');
@@ -1517,24 +1506,7 @@ function renderDesk(){
 function renderAll(){drawSongStatic();drawSong();drawMini();renderPhrases();renderDesk();saveSoon()}
 function select(i){if(i<0||i>=S.phrases.length)return;if(i!==S.cur){S.cur=i;S.take=null;S.cmpCursor=null}const p=S.phrases[i];if(p.start<V.v0||p.end>V.v1){const span=V.v1-V.v0;if(p.end-p.start<span*0.9)setView(p.start-(span-(p.end-p.start))/2,p.start-(span-(p.end-p.start))/2+span);else viewPhrase()}renderAll()}
 
-/* ---------- lyrics: one line per phrase, in order ---------- */
-function lyricLines(txt){return txt.split(/\r?\n/).map(l=>l.trim()).filter(l=>l&&!/^\[.*\]$/.test(l)&&!/^\(.*\)$/.test(l))}
-function applyLyrics(){
-  const lines=lyricLines($('#lyrText').value),n=S.phrases.length;
-  if(!lines.length||!n){$('#lyrInfo').textContent='Enganxa la lletra i tingues alguna frase detectada.';return}
-  if(lines.length===n)S.phrases.forEach((p,i)=>p.lyr=lines[i]);
-  else if(lines.length>n){ // more lines than phrases: join consecutive lines so the count matches, by phrase length
-    const per=lines.length/n;let k=0;S.phrases.forEach((p,i)=>{const to=i===n-1?lines.length:Math.round((i+1)*per);p.lyr=lines.slice(k,to).join(' / ');k=to});
-  }else{ // fewer lines than phrases: give each line to the phrase that follows, leave the rest empty
-    S.phrases.forEach((p,i)=>p.lyr=lines[i]||'');
-  }
-  S.lyrics=$('#lyrText').value;
-  $('#lyrInfo').textContent=lines.length===n?'Lletra repartida: '+n+' línies per a '+n+' frases.':lines.length>n?lines.length+' línies per a '+n+' frases: n’he ajuntat algunes. Pots corregir cada frase a sobre del dibuix.':lines.length+' línies per a '+n+' frases: les darreres frases queden sense lletra. Pots escriure-la a cada frase.';
-  renderPhrases();renderDesk();
-}
-$('#bLyrics').addEventListener('click',()=>{const box=$('#lyrBox');box.hidden=!box.hidden;if(!box.hidden){$('#lyrText').value=S.lyrics||'';$('#lyrText').focus()}});
-$('#lyrClose').addEventListener('click',()=>{$('#lyrBox').hidden=true});
-$('#lyrApply').addEventListener('click',applyLyrics);
+/* ---------- phrase title (free text: the lyric, or anything that helps) ---------- */
 $('#pLyr').addEventListener('input',e=>{const ph=curPh();if(ph){ph.lyr=e.target.value;renderPhrases();saveSoon()}});
 $('#pLyr').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Escape')e.target.blur();e.stopPropagation()});
 
