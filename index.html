@@ -1,0 +1,1650 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mirall de veu · Rockin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" href="https://rockin.cat/wp-content/uploads/2022/07/cropped-rockin-favicon-32x32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Ubuntu:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: top bar · full-song strip with phrase regions · phrase list | practice desk (listen → repeat → compare) */
+/* Rockin brand (same tokens as the Generador de diagrames): yellow top bar, cream ground, Lora + Ubuntu */
+:root{
+  --rk-groc:#FDBE10; --rk-tinta:#221F20; --rk-fons:#FAF8F3; --rk-suau:#F4F1EA; --rk-linia:#E2DDD3; --rk-gris:#6B6461;
+  --bg:var(--rk-fons); --panel:#FFFFFF; --sunk:var(--rk-suau); --ink:var(--rk-tinta); --muted:var(--rk-gris); --line:var(--rk-linia);
+  --ref:#0CA678; --ref-soft:rgba(12,166,120,.13); --you:#E0632A; --you-soft:rgba(224,99,42,.16);
+  --rec:#D23B3B; --focus:#6F42C1; --good:#0CA678; --mid:#C98A00; --low:#D23B3B;
+  --display:'Lora', Georgia, serif;
+  --body:'Ubuntu', Helvetica, Arial, sans-serif;
+  --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-inline:16px;padding-block:68px 40px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+
+/* top bar */
+.topbar{position:fixed;top:0;left:0;right:0;height:68px;z-index:1500;background:var(--rk-groc);color:var(--rk-tinta);display:flex;align-items:center;gap:16px;padding:0 20px}
+.topbar .brand{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;min-width:0}
+.topbar .brand img{height:44px;width:auto;display:block}
+.topbar .brand span{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .loaders{margin-left:auto}
+@media (max-width:560px){.topbar .brand span{font-size:16px}.topbar .brand img{height:34px}}
+.wrap{padding-top:16px}
+.start{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:48px 24px;border:2px dashed var(--rk-groc);background:#FFF7DC}
+.start.over{background:var(--you-soft);border-color:var(--you)}
+.start-t{font-size:34px}
+.start-s{margin:0;max-width:52ch;color:var(--muted);font-size:15px}
+.start-s.small{font-size:13px}
+.start-btn{font-size:17px;padding:12px 22px;margin-top:6px}
+.loaders{display:flex;flex-wrap:wrap;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ink);background:var(--ink);color:var(--rk-groc);border-radius:6px;padding:7px 14px;cursor:pointer;font-weight:700;line-height:1.2}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--muted)}
+.btn small{font-weight:400;opacity:.75}
+.btn:disabled{opacity:.45;cursor:default}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.meta{color:var(--muted);margin:2px 0 0;font-size:13px}
+
+/* song strip */
+.song-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px;margin-bottom:10px}
+.song-head h1{font-size:24px}
+.mixer{display:flex;flex-wrap:wrap;gap:8px 20px}
+.fader{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);min-width:150px}
+.fader span{display:flex;justify-content:space-between}
+.fader.v input{accent-color:var(--ref)}
+.fader.a input{accent-color:var(--muted)}
+.note{font-size:13px;color:var(--muted);margin:0 0 10px;padding:6px 10px;background:var(--sunk);border-radius:6px}
+.sep{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 24px;margin:0 0 12px;padding:14px 16px;border:1.5px solid var(--rk-groc);background:#FFF7DC;border-radius:10px}
+.sep.done{border-color:var(--line);background:transparent;padding:8px 12px;align-items:center}
+.sep.done .eyebrow,.sep.done .sep-title{display:none}
+.sep .btn{background:var(--ink);border-color:var(--ink);color:var(--rk-groc)}
+.sep-main{flex:1;min-width:240px;display:flex;flex-direction:column;gap:4px}
+.sep-title{font-family:var(--display);font-size:20px}
+.sep-info{font-size:13.5px;color:var(--muted);max-width:60ch}
+.sep-actions{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.sep.done .sep-actions{flex-direction:row;flex-wrap:wrap;align-items:center}
+.sep-prog{max-width:420px;margin-top:4px}
+.sep-prog i{background:var(--ref)}
+.adv{font-size:13px;flex:1;min-width:0}
+.adv summary{cursor:pointer;color:var(--muted);font-weight:700;width:max-content}
+.adv-body{display:flex;flex-direction:column;gap:10px;padding-top:10px}
+.adv-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.adv-row label{display:flex;align-items:center;gap:5px;color:var(--muted)}
+.adv-l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted);min-width:64px}
+.adv.inline{flex:none}
+.adv.inline .adv-body{padding-top:6px}
+.edit-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-bottom:6px}
+.full-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px}
+.rec-btn{color:var(--rec);border-color:var(--rec);font-weight:700}
+.rec-btn.on{background:var(--rec);color:#fff}
+.edit-bar .group{gap:4px}
+.mini-wrap{height:34px;border-radius:6px 6px 0 0;background:var(--sunk);overflow:hidden;touch-action:none;border-bottom:1px solid var(--line)}
+#cvMini{width:100%;height:100%;display:block;cursor:grab}
+.wave-wrap{position:relative;height:150px;border-radius:0 0 8px 8px;background:var(--sunk);overflow:hidden;touch-action:none}
+#cvSong{width:100%;height:100%;display:block;cursor:crosshair}
+.song-tools{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-start;margin-top:10px}
+.group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sbtn{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;line-height:1.3}
+.sbtn:hover{border-color:var(--muted)}
+.sbtn:disabled{opacity:.4;cursor:default}
+.clock{font-size:13px;color:var(--muted);min-width:60px}
+.rhythm{font-size:13px}
+.rhythm label{display:flex;align-items:center;gap:5px}
+.count{display:flex;gap:10px;align-items:baseline;font-family:var(--display);font-weight:700}
+.count i{font-style:normal;font-size:20px;color:var(--line);transition:color .05s}
+.count i.on{color:var(--ink);font-size:26px}
+.count i.on.one{color:var(--rec)}
+details.detect{font-size:13px}
+details.detect summary{cursor:pointer;color:var(--muted);font-weight:700}
+.detect-body{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding-top:8px}
+.detect-body label{display:flex;flex-direction:column;align-items:flex-start;gap:2px;color:var(--muted);font-size:12px}
+
+/* work area */
+.work{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+.phrases{padding:12px}
+.phrases h2{font-size:16px;margin:2px 4px 8px;display:flex;justify-content:space-between}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:560px;overflow:auto}
+.pitem{position:relative}
+.pdel{position:absolute;right:6px;bottom:6px;border:0;background:transparent;color:var(--muted);font-size:12px;line-height:1;padding:3px 6px;border-radius:5px;cursor:pointer;opacity:0}
+.pitem:hover .pdel,.pitem:focus-within .pdel{opacity:1}
+.pdel:hover{background:var(--you-soft);color:var(--you)}
+#toast button{margin-left:12px;border:1px solid var(--bg);background:transparent;color:inherit;border-radius:5px;padding:2px 8px;cursor:pointer;font:inherit}
+#toast{pointer-events:auto}
+.pbtn{width:100%;display:grid;grid-template-columns:28px 1fr auto;gap:2px 8px;align-items:center;text-align:left;border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 8px;cursor:pointer}
+.pbtn:hover{background:var(--sunk)}
+.pbtn.sel{background:var(--ref-soft);border-color:var(--ref)}
+.pnum{font-family:var(--display);font-weight:700;font-size:18px;color:var(--ref);grid-row:span 2}
+.ptime{font-family:var(--mono);font-size:12px}
+.psub{font-size:11px;color:var(--muted);grid-column:2}
+.chip{font-family:var(--mono);font-size:11px;font-weight:600;border-radius:99px;padding:1px 7px;border:1px solid currentColor;white-space:nowrap}
+.chip.good{color:var(--good)} .chip.mid{color:var(--mid)} .chip.low{color:var(--low)} .chip.none{color:var(--muted);border-style:dashed}
+
+.desk{display:flex;flex-direction:column;gap:14px;min-width:0}
+.desk-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:flex-start}
+.desk-head h2{font-size:30px;line-height:1.1}
+.nudges{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);align-items:center}
+.nudges .group{gap:3px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.step{position:relative;text-align:left;border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-height:86px}
+.step b{font-family:var(--display);font-size:20px}
+.step small{color:var(--muted);font-size:12.5px;line-height:1.35}
+.step .k{position:absolute;top:10px;right:10px;font-family:var(--mono);font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.step:hover{border-color:var(--muted)}
+.step.listen b{color:var(--ref)}
+.step.rec b{color:var(--rec)}
+.step.active{border-color:currentColor;box-shadow:0 0 0 3px var(--ref-soft)}
+.step.listen.active{color:var(--ref)}
+.step.rec.active{color:var(--rec);box-shadow:0 0 0 3px var(--you-soft)}
+.step.cyc.active{color:var(--ink)}
+.opts{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13px}
+.opts label{display:flex;align-items:center;gap:6px}
+.meter{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.meter-bar{width:90px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.meter-bar i{display:block;height:100%;width:0;background:var(--good);transition:width .06s linear}
+.status{min-height:30px;display:flex;align-items:center;gap:10px;font-size:14px}
+.status .dot{width:10px;height:10px;border-radius:50%;background:var(--rec);animation:pulse 1s infinite}
+.progress{flex:1;max-width:280px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--rec)}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.status .dot{animation:none}}
+
+.cmp-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px 16px;margin-bottom:8px}
+.level{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-right:auto}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;margin-top:12px}
+.stars{font-size:34px;letter-spacing:4px;line-height:1;color:#FFC83D;text-shadow:0 0 10px rgba(255,200,61,.45)}
+.stars .off{color:var(--line);text-shadow:none}
+.verdict-t{font-family:var(--display);font-size:26px;font-weight:700;line-height:1.1}
+.verdict-s{font-size:15px;color:var(--muted);max-width:50ch}
+.verdict .big{font-size:30px}
+.details{margin-top:8px;font-size:13px}
+.details summary{cursor:pointer;color:var(--muted);font-weight:700;width:max-content}
+.cmp-head h3{font-size:18px}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.legend .r{background:#4A4442;border:1.5px solid #9A928E;height:10px;border-radius:5px} .legend .y{background:#FF8A4C} .legend .h{background:#FDBE10;height:10px;border-radius:5px;box-shadow:0 0 6px rgba(253,190,16,.8)}
+.cv-wrap{height:300px;border-radius:10px;background:#221F20;overflow:hidden}
+#cvCmp{width:100%;height:100%;display:block}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:10px;align-items:baseline}
+#stats{margin-top:0}
+.big{font-family:var(--display);font-size:40px;font-weight:700;line-height:1}
+.stat-l{font-size:12px;color:var(--muted)}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat b{font-size:15px}
+.cmp-tools{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:12px;font-size:13px}
+.cmp-tools label{display:flex;align-items:center;gap:6px;color:var(--muted)}
+
+.tlist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.take{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.take.sel{border-color:var(--you);background:var(--you-soft)}
+.take-main{flex:1;min-width:160px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;background:none;border:0;cursor:pointer;text-align:left;padding:2px}
+.take-main b{font-family:var(--display)}
+.take-main small{color:var(--muted)}
+.empty{color:var(--muted);font-size:13px;margin:6px 0 0}
+.help{font-size:13.5px;color:var(--muted);max-width:75ch}
+.help h3{font-size:15px;color:var(--ink);margin-bottom:4px}
+.help p{margin:0 0 8px}
+kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border-radius:4px;padding:0 4px;background:var(--panel)}
+.credit{font-size:12.5px;color:var(--muted);text-align:center;margin:8px 0 0}
+.credit a{color:inherit}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;max-width:min(92vw,520px);opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+
+@media (max-width:860px){
+  .work{grid-template-columns:minmax(0,1fr)}
+  .plist{flex-direction:row;overflow-x:auto;max-height:none;padding-bottom:4px}
+  .plist li{flex:none}
+  .pbtn{width:auto;min-width:150px}
+}
+@media (max-width:560px){
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .step{min-height:0}
+  .desk-head h2{font-size:24px}
+  .cv-wrap{height:230px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <a class="brand" href="https://rockin.cat" target="_blank" rel="noopener"><img src="https://rockin.cat/wp-content/uploads/2022/07/rockin-logo.svg" alt="Rockin" onerror="this.outerHTML='&lt;b style=&quot;font-family:Lora,serif;font-size:30px;letter-spacing:.02em&quot;&gt;ROCKIN&lt;/b&gt;'"><span>Mirall de veu</span></a>
+    <div class="loaders">
+      <label class="btn" for="fMix">Carrega una cançó</label>
+      <input type="file" id="fMix" accept="audio/*" class="vh">
+    </div>
+  </header>
+
+  <section class="panel start" id="startPanel" aria-label="Comença">
+    <div class="eyebrow">Pas 1</div>
+    <h1 class="start-t">Carrega una cançó</h1>
+    <p class="start-s">Un MP3, WAV o M4A de la cançó que vols treballar. Després separarem la veu i la dividirem en frases per cantar-les una a una.</p>
+    <label class="btn start-btn" for="fMix">Tria un fitxer d’àudio</label>
+    <p class="start-s small">O arrossega el fitxer aquí.</p>
+  </section>
+
+  <section class="panel" id="songPanel" aria-label="Cançó" hidden>
+    <div class="song-head">
+      <div>
+        <div class="eyebrow">Cançó</div>
+        <h1 id="songName">—</h1>
+        <p class="meta mono" id="songMeta"></p>
+      </div>
+      <div class="group" role="group" aria-label="Què sona" id="mixPresets">
+        <button class="sbtn" type="button" data-mix="1,1">▶ Cançó</button><button class="sbtn" type="button" data-mix="1,0">▶ Només veu</button><button class="sbtn" type="button" data-mix="0,1">▶ Només base</button>
+        <button class="sbtn" id="bStop" type="button">■ Atura <kbd>Esc</kbd></button>
+        <span class="clock mono" id="clock">0:00.0</span>
+      </div>
+    </div>
+    <div class="sep" id="sepRow">
+      <div class="sep-main">
+        <div class="eyebrow">Pas 2</div>
+        <b class="sep-title" id="sepTitle">Separa la veu de la banda</b>
+        <span class="sep-info" id="sepMsg">Cal fer-ho abans de res: les frases i la melodia es treuen només de la pista de veu. Es fa al teu ordinador; la primera vegada descarrega el model (uns 170 MB) i després el recorda.</span>
+        <span class="progress sep-prog" id="sepProg" hidden><i id="sepBar"></i></span>
+      </div>
+      <div class="sep-actions">
+        <button class="btn" id="bSep" type="button">Separa la veu amb IA</button>
+        <label class="sbtn" for="fStem" id="lStem">Ja tinc la pista de veu separada…</label>
+        <input type="file" id="fStem" accept="audio/*" class="vh">
+        <button class="sbtn" id="bApprox" type="button">Treballa sense separar (aproximat)</button>
+        <div class="group" id="sepDl" hidden>
+          <button class="sbtn" id="dlVoc" type="button">Descarrega la veu (WAV)</button>
+          <button class="sbtn" id="dlInst" type="button">Descarrega la base (WAV)</button>
+        </div>
+      </div>
+    </div>
+    <p class="note" id="sepNote" hidden></p>
+    <div class="full-row" id="fullRow">
+      <span class="eyebrow">Cançó sencera</span>
+      <button class="sbtn rec-btn" id="bFull" type="button">● Canta-la tota des del cursor</button>
+      <button class="sbtn" id="bFullStop" type="button" hidden>■ Atura i desa</button>
+      <button class="sbtn" id="bFullPlay" type="button" hidden>▶ Escolta’t sencera amb la base</button>
+      <span class="stat-l" id="fullInfo">Et grava de seguit amb la base; en acabar, cada frase queda amb la seva presa i la seva nota.</span>
+    </div>
+    <div class="edit-bar">
+      <div class="group">
+        <button class="sbtn" id="zOut" type="button" title="Allunya (−)">−</button>
+        <button class="sbtn" id="zIn" type="button" title="Apropa (+)">+</button>
+        <button class="sbtn" id="zAll" type="button">Tota la cançó</button>
+        <button class="sbtn" id="zPh" type="button">Frase actual</button>
+      </div>
+      <span class="stat-l" id="editHint">Arrossega sobre un espai buit per crear una frase · arrossega les vores per ajustar-la · roda del ratolí amb Ctrl/⌘ per fer zoom, amb Maj per desplaçar</span>
+    </div>
+    <div class="mini-wrap"><canvas id="cvMini" aria-label="Vista general de la cançó"></canvas></div>
+    <div class="wave-wrap"><canvas id="cvSong" aria-label="Forma d'ona de la veu amb les frases marcades"></canvas></div>
+    <div class="song-tools">
+      <button class="sbtn" id="bPlaySong" type="button">▶ Des del cursor</button>
+      <span class="stat-l" id="rhythmV"></span>
+      <details class="adv">
+        <summary>Ajustos avançats</summary>
+        <div class="adv-body">
+          <div class="adv-row">
+            <span class="adv-l">Volum</span>
+            <label class="fader v" for="gVoice"><span>Veu guia <b class="mono" id="gVoiceV">100%</b></span><input type="range" id="gVoice" min="0" max="1.5" step="0.05" value="1"></label>
+            <label class="fader a" for="gAcc"><span>Acompanyament <b class="mono" id="gAccV">100%</b></span><input type="range" id="gAcc" min="0" max="1.5" step="0.05" value="1"></label>
+          </div>
+          <div class="adv-row" aria-label="Edició de frases">
+            <span class="adv-l">Frases</span>
+            <button class="sbtn" id="eSplit" type="button" title="Divideix la frase seleccionada al cursor">Divideix al cursor</button>
+            <button class="sbtn" id="eMerge" type="button">Uneix amb la següent</button>
+            <button class="sbtn" id="eAdd" type="button">Nova frase al cursor</button>
+            <button class="sbtn" id="eDel" type="button">Elimina</button>
+            <span class="stat-l">Per crear-ne una, arrossega directament sobre la forma d’ona.</span>
+          </div>
+          <div class="adv-row rhythm" aria-label="Ritme">
+            <span class="adv-l">Ritme</span>
+            <span class="stat-l">Tempo</span><b class="mono" id="bpmV">—</b>
+            <button class="sbtn" id="bpmHalf" type="button" title="El tempo detectat és el doble del real">÷2</button><button class="sbtn" id="bpmDbl" type="button" title="El tempo detectat és la meitat del real">×2</button>
+            <label for="meter" class="stat-l">Compàs <select id="meter"><option value="4" selected>4/4</option><option value="3">3/4</option><option value="2">2/4</option></select></label>
+            <span class="stat-l">Temps 1</span><button class="sbtn" id="dbPrev" type="button" aria-label="Mou el temps 1 un temps enrere">←</button><button class="sbtn" id="dbNext" type="button" aria-label="Mou el temps 1 un temps endavant">→</button>
+            <label for="oSnap" class="stat-l"><input type="checkbox" id="oSnap" checked> Ajusta les frases als temps</label>
+          </div>
+          <div class="adv-row detect-body" aria-label="Detecció de frases">
+            <span class="adv-l">Detecció</span>
+            <label for="dSens">Sensibilitat <input type="range" id="dSens" min="-40" max="-8" step="1" value="-22"></label>
+            <label for="dDom" id="lDom">Veu per sobre de la base <span class="mono" id="dDomV">−18 dB</span><input type="range" id="dDom" min="-30" max="0" step="1" value="-18"></label>
+            <label for="dSing">Mínim de cant per frase <span class="mono" id="dSingV">25 %</span><input type="range" id="dSing" min="10" max="80" step="5" value="25"></label>
+            <label for="dCons" id="lCons">Consonants mínimes per segon <span class="mono" id="dConsV">0,3</span><input type="range" id="dCons" min="0" max="2" step="0.1" value="0.3"></label>
+            <label for="dGap">Silenci entre frases <span class="mono" id="dGapV">0,35 s</span><input type="range" id="dGap" min="0.1" max="1.2" step="0.05" value="0.35"></label>
+            <label for="dMax">Durada màxima <span class="mono" id="dMaxV">10 s</span><input type="range" id="dMax" min="3" max="20" step="1" value="10"></label>
+            <button class="sbtn" id="bDetect" type="button">Torna a detectar</button>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="work" id="work">
+    <aside class="panel phrases" aria-label="Frases">
+      <h2>Frases <span class="mono stat-l" id="nPhr"></span></h2>
+      <ol class="plist" id="plist"></ol>
+      <p class="empty" id="ghostNote" hidden></p>
+    </aside>
+
+    <div class="desk">
+      <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+        <div class="desk-head">
+          <div>
+            <div class="eyebrow">Frase</div>
+            <h2 id="pTitle">—</h2>
+            <p class="meta mono" id="pTime"></p>
+          </div>
+          <div class="nudges">
+            <div class="group"><button class="sbtn" id="bPrev" type="button" aria-label="Frase anterior">←</button><button class="sbtn" id="bNext" type="button" aria-label="Frase següent">→</button></div>
+            <div class="group">Inici <button class="sbtn" data-n="s,-0.1" type="button">−</button><button class="sbtn" data-n="s,0.1" type="button">+</button></div>
+            <div class="group">Final <button class="sbtn" data-n="e,-0.1" type="button">−</button><button class="sbtn" data-n="e,0.1" type="button">+</button></div>
+          </div>
+        </div>
+        <div class="steps">
+          <button class="step listen" id="bListen" type="button"><span class="k">Espai</span><b>Escolta</b><small>la frase original, amb la veu guia</small></button>
+          <button class="step rec" id="bRec" type="button"><span class="k">R</span><b>Repeteix</b><small>canta-la sobre la base; t’enregistro i ho comparo</small></button>
+          <button class="step cyc" id="bCycle" type="button"><span class="k">Intro</span><b>Cicle</b><small>escolta → entra la base → cantes → compara</small></button>
+        </div>
+        <div class="opts">
+          <label for="oTimes">Escoltes al cicle <select id="oTimes"><option selected>1</option><option>2</option><option>3</option></select></label>
+          <label for="oBack">Mentre cantes sona <select id="oBack"><option value="guide" selected>la base + veu guia fluixa</option><option value="base">la base (sense veu)</option><option value="none">res (a cappella)</option></select></label>
+          <label for="oPre">Entrada <select id="oPre"><option value="0">entra directament</option><option value="1" selected>1 compàs d’entrada</option><option value="2">2 compassos d’entrada</option></select></label>
+          <span class="meter"><button class="sbtn" id="bMic" type="button">Prova el micròfon</button><span class="meter-bar"><i id="meterI"></i></span></span>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <div class="cmp-head">
+          <h3>Comparació</h3>
+          <label class="level" for="oLevel">Nivell <select id="oLevel"><option value="easy" selected>Fàcil</option><option value="mid">Mitjà</option><option value="hard">Exigent</option></select></label>
+          <div class="legend"><span><i class="r"></i>Notes de l’original</span><span><i class="y"></i>Tu</span><span><i class="h"></i>Encertat</span></div>
+        </div>
+        <div class="cv-wrap"><canvas id="cvCmp" aria-label="Notes de l'original en barres i la teva veu a sobre"></canvas></div>
+        <div class="stats" id="stats"></div>
+        <div class="cmp-tools">
+          <div class="group">
+            <button class="sbtn" id="cRef" type="button">▶ Original</button>
+            <button class="sbtn" id="cYou" type="button">▶ Tu</button>
+            <button class="sbtn" id="cAlt" type="button">▶ Alterna</button>
+            <button class="sbtn" id="cBoth" type="button" title="Original a l'esquerra, tu a la dreta">▶ Juntes (E/D)</button>
+          </div>
+          <label for="oWithBase"><input type="checkbox" id="oWithBase" checked> Amb la base</label>
+          <label for="oVerb">Reverb a la teva veu <select id="oVerb"><option value="0">cap</option><option value="0.22" selected>una mica</option><option value="0.45">sala gran</option></select></label>
+          <details class="adv inline"><summary>Ajustos</summary><div class="adv-body"><div class="adv-row">
+          <label for="oOct"><input type="checkbox" id="oOct" checked> Ignora l'octava</label>
+          <label for="oNudge">Alineació <input type="range" id="oNudge" min="-0.6" max="0.6" step="0.01" value="0"> <span class="mono" id="oNudgeV">0,00 s</span></label>
+          </div></div></details>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 style="font-size:16px">Preses d'aquesta frase</h3>
+        <ul class="tlist" id="tlist"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel help">
+    <h3>Com funciona</h3>
+    <p><b>1. Carrega una cançó</b> (MP3, WAV, M4A). <b>2. Separa la veu</b>: el programa fa servir Demucs, un model obert, dins del teu navegador; la cançó no surt del teu ordinador. <b>3. Treballa frase a frase</b>: les frases i la melodia es treuen només de la pista de veu. Escolta la frase, repeteix-la cantant sobre la base i mira quines notes has encertat.</p>
+    <p><b>Canta amb auriculars.</b> Si la base surt pels altaveus, el micròfon també la grava i la comparació es confon. Amb auriculars Bluetooth, grava amb el micròfon de l’ordinador, no amb el dels auriculars: el retard es corregeix sol en acabar la presa.</p>
+    <p><b>A la comparació,</b> clica una barra de nota per sentir aquella nota: primer l’original i després tu. Clica en un espai buit per triar des d’on sona la reproducció (l’original, tu o les dues); doble clic per tornar al principi. La reverb només s’aplica en escoltar-te; el WAV que descarregues és la veu neta.</p>
+    <p><b>Dreceres:</b> <kbd>Espai</kbd> escolta · <kbd>R</kbd> repeteix · <kbd>Intro</kbd> cicle · <kbd>←</kbd> <kbd>→</kbd> frase anterior/següent · <kbd>Esc</kbd> atura. Les preses es guarden només mentre la pàgina està oberta; descarrega-les en WAV si les vols conservar.</p>
+  </section>
+  <p class="credit">Mirall de veu és una eina de <a href="https://rockin.cat" target="_blank" rel="noopener">Rockin</a>. Separació de veu amb Demucs (Meta AI, llicència MIT) a través de demucs-web.</p>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const NOTE=['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
+const NAT=[1,0,1,0,1,1,0,1,0,1,0,1];
+const dec=(x,d=1)=>x.toFixed(d).replace('.',',');
+const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1)};
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function toastUndo(msg,fn){const t=$('#toast');t.textContent=msg;const b=document.createElement('button');b.type='button';b.textContent='Desfés';b.onclick=()=>{fn();t.classList.remove('on')};t.appendChild(b);t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),7000)}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),3800)}
+
+const errMsg=e=>(e&&(e.message||e.name))||String(e);
+window.addEventListener('error',e=>toast('Error: '+errMsg(e.error||e.message)));
+window.addEventListener('unhandledrejection',e=>toast('Error: '+errMsg(e.reason)));
+const IS_SAFARI=/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
+const IS_FILE=location.protocol==='file:';
+/* ---------- audio context ---------- */
+let AC=null;
+function ac(){if(!AC){const C=window.AudioContext||window.webkitAudioContext;try{AC=new C({latencyHint:'interactive',sampleRate:44100})}catch(e){AC=new C({latencyHint:'interactive'})}}if(AC.state==='suspended')AC.resume();return AC}
+
+/* ---------- state ---------- */
+const S={name:'',sr:44100,len:0,mix:null,stem:null,demo:false,mono:false,
+  vL:null,vR:null,iL:null,iR:null,det:null,env:null,hop:0.01,
+  phrases:[],cur:-1,cursor:0,live:null,liveLat:0,liveMax:0,gv:1,ga:1,take:null,play:null,recInfo:null,peaks:null};
+let uid=1;
+const curPh=()=>S.phrases[S.cur]||null;
+
+/* ---------- DSP helpers ---------- */
+function bandpass(x,sr,lo=120,hi=3500){
+  const y=new Float32Array(x.length),aH=Math.exp(-2*Math.PI*lo/sr),aL=Math.exp(-2*Math.PI*hi/sr);
+  let px=0,py=0,lp=0;
+  for(let i=0;i<x.length;i++){const h=aH*(py+x[i]-px);px=x[i];py=h;lp=(1-aL)*h+aL*lp;y[i]=lp}
+  return y;
+}
+function sameish(L,R){if(L===R)return true;const n=L.length,st=Math.max(1,Math.floor(n/3000));for(let i=0;i<n;i+=st)if(Math.abs(L[i]-R[i])>1e-4)return false;return true}
+
+/* YIN pitch tracker on a downsampled copy; returns MIDI per 10 ms frame (NaN = unvoiced) */
+function pitchTrack(x,sr){
+  const ds=Math.max(1,Math.round(sr/11025)),fs=sr/ds,n=Math.floor(x.length/ds);
+  const y=new Float32Array(n);
+  for(let i=0;i<n;i++){let s=0;const o=i*ds;for(let k=0;k<ds;k++)s+=x[o+k];y[i]=s/ds}
+  const W=Math.round(fs*0.025),tMin=Math.floor(fs/1000),tMax=Math.ceil(fs/70),hop=Math.round(fs*0.01);
+  const F=Math.max(0,Math.floor((n-W-tMax)/hop)+1);
+  const midi=new Float32Array(F).fill(NaN),rms=new Float32Array(F);
+  let mx=0;
+  for(let f=0;f<F;f++){const o=f*hop;let s=0;for(let j=0;j<W;j++)s+=y[o+j]*y[o+j];rms[f]=Math.sqrt(s/W);if(rms[f]>mx)mx=rms[f]}
+  const gate=mx*0.07,d=new Float32Array(tMax+2);
+  for(let f=0;f<F;f++){
+    if(rms[f]<gate)continue;
+    const o=f*hop;
+    for(let t=1;t<=tMax;t++){let s=0;for(let j=0;j<W;j++){const v=y[o+j]-y[o+j+t];s+=v*v}d[t]=s}
+    let run=0;d[0]=1;
+    for(let t=1;t<=tMax;t++){run+=d[t];d[t]=run>0?d[t]*t/run:1}
+    let best=-1;
+    for(let t=tMin;t<=tMax;t++){if(d[t]<0.15){while(t+1<=tMax&&d[t+1]<d[t])t++;best=t;break}}
+    if(best<0){let m=1,mi=-1;for(let t=tMin;t<=tMax;t++)if(d[t]<m){m=d[t];mi=t}if(m<0.3)best=mi}
+    if(best<0)continue;
+    let tau=best;
+    if(best>1&&best<tMax){const a=d[best-1],b=d[best],c=d[best+1],den=a+c-2*b;if(den>0)tau=best+(a-c)/(2*den)}
+    midi[f]=69+12*Math.log2(fs/tau/440);
+  }
+  // median-of-5 smoothing over voiced neighbours, drop isolated frames
+  const out=new Float32Array(F).fill(NaN);
+  for(let f=0;f<F;f++){
+    if(isNaN(midi[f]))continue;
+    const w=[];for(let k=-2;k<=2;k++){const v=midi[f+k];if(v!==undefined&&!isNaN(v))w.push(v)}
+    if(w.length<2)continue;
+    w.sort((a,b)=>a-b);out[f]=w[w.length>>1];
+  }
+  return{midi:out,rms,hop:hop/fs,dur:F*hop/fs,mx};
+}
+function onset(tr){for(let f=0;f<tr.midi.length;f++)if(!isNaN(tr.midi[f])&&tr.rms[f]>tr.mx*0.15)return f*tr.hop;return 0}
+function voicedSpan(tr){let a=-1,b=-1;for(let f=0;f<tr.midi.length;f++)if(!isNaN(tr.midi[f])){if(a<0)a=f;b=f}return a<0?0:(b-a)*tr.hop}
+
+/* ---------- sources ---------- */
+function buildSources(){
+  const {L,R,sr}=S.mix,n=L.length;
+  S.sr=sr;S.len=n;S.mono=sameish(L,R);S.peaks=null;S.vpeaks=null;
+  if(S.stem){
+    const a=S.stem.L,b=S.stem.R,m=Math.min(n,a.length);
+    S.vL=new Float32Array(n);S.vR=new Float32Array(n);S.vL.set(a.subarray(0,m));S.vR.set(b.subarray(0,m));
+    S.iL=new Float32Array(n);S.iR=new Float32Array(n);
+    if(S.inst){S.iL.set(S.inst.L.subarray(0,Math.min(n,S.inst.L.length)));S.iR.set(S.inst.R.subarray(0,Math.min(n,S.inst.R.length)))}
+    else for(let i=0;i<n;i++){S.iL[i]=L[i]-S.vL[i];S.iR[i]=R[i]-S.vR[i]}
+  }else{
+    const M=new Float32Array(n),D=new Float32Array(n),Dn=new Float32Array(n);
+    for(let i=0;i<n;i++){M[i]=(L[i]+R[i])*.5;D[i]=(L[i]-R[i])*.5;Dn[i]=-D[i]}
+    S.vL=M;S.vR=M;S.iL=D;S.iR=Dn;
+  }
+}
+function analyse(){
+  const n=S.len,sr=S.sr,hop=Math.round(sr*0.01),win=hop*4;
+  const x=new Float32Array(n),mx=new Float32Array(n);
+  for(let i=0;i<n;i++){x[i]=(S.vL[i]+S.vR[i])*.5;mx[i]=(S.mix.L[i]+S.mix.R[i])*.5}
+  const fx=bandpass(x,sr),fs=(!S.stem&&!S.mono)?bandpass(S.iL,sr):null,fm=S.stem?bandpass(mx,sr):null;
+  S.det=fx;
+  const F=Math.max(1,Math.floor((n-win)/hop)+1),env=new Float32Array(F),dom=new Float32Array(F);
+  for(let f=0;f<F;f++){
+    const o=f*hop;let s=0,s2=0,s3=0;
+    for(let j=0;j<win;j+=2){const v=fx[o+j]||0;s+=v*v;if(fs){const w=fs[o+j]||0;s2+=w*w}if(fm){const w=fm[o+j]||0;s3+=w*w}}
+    let r=Math.sqrt(s/(win/2));if(fs)r=Math.max(0,r-0.8*Math.sqrt(s2/(win/2)));
+    env[f]=20*Math.log10(r+1e-7);
+    dom[f]=fm?20*Math.log10((Math.sqrt(s/(win/2))+1e-7)/(Math.sqrt(s3/(win/2))+1e-7)):0;
+  }
+  // dominance of the voice over the whole mix, smoothed over ±150 ms: rejects instrument bleed in the separated voice
+  const domS=new Float32Array(F),W=15;
+  for(let f=0;f<F;f++){let a=0,c=0;for(let k=-W;k<=W;k++){const v=dom[f+k];if(v!==undefined){a+=v;c++}}domS[f]=a/c}
+  S.env=env;S.dom=domS;S.hop=hop/sr;
+  // sung-ness: a pitch track over the whole voice track; a frame is "sung" when it sits inside a note held ≥120 ms in the vocal range
+  const tr=pitchTrack(fx,sr),notes=noteSeg(tr).filter(nt=>nt.t1-nt.t0>=0.12&&nt.m>=43&&nt.m<=86);
+  const voiced=new Uint8Array(F),stable=new Uint8Array(F);
+  for(let f=0;f<F;f++){const v=tr.midi[Math.round(f*S.hop/tr.hop)];voiced[f]=(v!==undefined&&!isNaN(v)&&v>=43&&v<=86)?1:0}
+  for(const nt of notes){const a=Math.max(0,Math.floor(nt.t0/S.hop)),b=Math.min(F,Math.ceil(nt.t1/S.hop));for(let f=a;f<b;f++)stable[f]=1}
+  S.voiced=voiced;S.stable=stable;
+  // consonants: short unvoiced bursts whose energy above 4 kHz rivals the energy in the vocal band; instruments playing a melody almost never produce them
+  const ah=Math.exp(-2*Math.PI*4000/sr);let hx=0,hy=0,hx2=0,hy2=0;
+  const hf=new Float32Array(F);
+  for(let f=0;f<F;f++){const o=f*hop;let e=0;for(let j=0;j<win;j++){const v=x[o+j]||0;const h=ah*(hy+v-hx);hx=v;hy=h;const h2=ah*(hy2+h-hx2);hx2=h;hy2=h2;if(j%2===0)e+=h2*h2}hf[f]=20*Math.log10(Math.sqrt(e/(win/2))+1e-7)}
+  const hs=Float32Array.from(hf).sort(),hfTop=hs[Math.floor(F*.98)];
+  // a consonant is a transient: HF energy jumps ≥ 8 dB above its local median (±300 ms)
+  const cons=new Uint8Array(F);let run=0;const Wm=30,buf=new Float32Array(2*Wm+1);
+  for(let f=0;f<F;f++){
+    let c=0;for(let k=-Wm;k<=Wm;k++){const v=hf[f+k];if(v!==undefined)buf[c++]=v}
+    const sub=buf.subarray(0,c).slice().sort(),med=sub[c>>1];
+    const burst=hf[f]>hfTop-25&&hf[f]-med>=8;
+    if(burst){run++;if(run===2)cons[f-1]=1}else run=0;
+  }
+  S.cons=cons;
+}
+function detect(){
+  const env=S.env,hop=S.hop,dur=S.len/S.sr;
+  const sorted=Float32Array.from(env).sort(),p95=sorted[Math.floor(sorted.length*.95)];
+  const thr=p95+(+$('#dSens').value),gap=+$('#dGap').value,maxLen=+$('#dMax').value;
+  let segs=[],st=-1;
+  const domThr=+$('#dDom').value,useDom=!!S.stem,minSing=(+$('#dSing').value)/100;
+  const near=f=>{for(let k=-10;k<=10;k++)if(S.voiced[f+k])return true;return false};
+  for(let f=0;f<env.length;f++){const on=env[f]>thr&&(!useDom||S.dom[f]>domThr)&&near(f);if(on&&st<0)st=f;if(!on&&st>=0){segs.push([st*hop,f*hop+0.04]);st=-1}}
+  if(st>=0)segs.push([st*hop,env.length*hop]);
+  const merged=[];
+  for(const s of segs){const l=merged[merged.length-1];if(l&&s[0]-l[1]<gap)l[1]=s[1];else merged.push(s.slice())}
+  // keep only segments where sung (stable-pitch) frames fill enough of the time: drops hits, risers and noises
+  const minCons=+$('#dCons').value,ghosts=[];
+  let ph=merged.filter(s=>{
+    if(s[1]-s[0]<0.3)return false;
+    const a=Math.floor(s[0]/hop),b=Math.ceil(s[1]/hop);let st=0,cn=0;for(let f=a;f<b;f++){st+=S.stable[f]||0;cn+=S.cons[f]||0}
+    const len=(b-a)*hop,sung=st*hop>=0.3&&st/(b-a)>=minSing,cons=!S.stem||cn/len>=minCons||cn>=3;
+    if(sung&&cons)return true;
+    // kept aside as a doubtful stretch: shown in grey, one click turns it into a phrase
+    ghosts.push({start:Math.max(0,s[0]-0.08),end:Math.min(dur,s[1]+0.18),why:!sung?'poques notes cantades':'sense consonants (instrument?)'});
+    return false;
+  });
+  S.ghosts=ghosts;
+  const split=s=>{
+    const len=s[1]-s[0];if(len<=maxLen)return[s];
+    const a=Math.floor((s[0]+len*.25)/hop),b=Math.floor((s[1]-len*.25)/hop);let mi=a,mv=Infinity;
+    for(let f=a;f<b;f++){let v=0;for(let k=-5;k<=5;k++)v+=env[f+k]||0;if(v<mv){mv=v;mi=f}}
+    return[...split([s[0],mi*hop]),...split([mi*hop,s[1]])];
+  };
+  ph=ph.flatMap(split);
+  for(let i=0;i<ph.length;i++){ph[i][0]=Math.max(0,ph[i][0]-0.08);ph[i][1]=Math.min(dur,ph[i][1]+0.18)}
+  for(let i=0;i<ph.length-1;i++)if(ph[i][1]>ph[i+1][0]){const m=(ph[i][1]+ph[i+1][0])/2;ph[i][1]=m;ph[i+1][0]=m}
+  S.phrases=ph.map(([s,e])=>({id:uid++,start:s,end:e,raw:{s,e},takes:[],ref:null}));
+  if(S.beats)snapPhrases();
+}
+function refTrack(ph){
+  const key=ph.start.toFixed(3)+'|'+ph.end.toFixed(3);
+  if(ph.ref&&ph.ref.key===key)return ph.ref.tr;
+  const a=Math.round(ph.start*S.sr),b=Math.round(ph.end*S.sr);
+  const tr=pitchTrack(S.det.subarray(a,b),S.sr);
+  ph.ref={key,tr};return tr;
+}
+
+/* ---------- tempo and beats (onset envelope + autocorrelation + dynamic-programming beat tracker) ---------- */
+function onsetEnvelope(L,R,sr){
+  const n=L.length,hop=Math.round(sr/100),F=Math.floor(n/hop);
+  const aL=Math.exp(-2*Math.PI*150/sr),aH=Math.exp(-2*Math.PI*3000/sr);
+  let lp=0,hx=0,hy=0;
+  const eL=new Float32Array(F),eH=new Float32Array(F),eA=new Float32Array(F);
+  for(let f=0;f<F;f++){let a=0,b=0,c=0;const o=f*hop;
+    for(let i=0;i<hop;i++){const x=(L[o+i]+R[o+i])*.5;lp=(1-aL)*x+aL*lp;const h=aH*(hy+x-hx);hx=x;hy=h;a+=lp*lp;b+=h*h;c+=x*x}
+    eL[f]=Math.log(a/hop+1e-9);eH[f]=Math.log(b/hop+1e-9);eA[f]=Math.log(c/hop+1e-9)}
+  const on=new Float32Array(F),low=new Float32Array(F);
+  for(let f=1;f<F;f++){const l=Math.max(0,eL[f]-eL[f-1]);low[f]=l;on[f]=l+Math.max(0,eH[f]-eH[f-1])+0.5*Math.max(0,eA[f]-eA[f-1])}
+  // remove local mean, keep peaks, normalise
+  const out=new Float32Array(F),Wn=25;let sum=0,cnt=0;
+  for(let f=0;f<Math.min(F,Wn);f++){sum+=on[f];cnt++}
+  for(let f=0;f<F;f++){if(f+Wn<F){sum+=on[f+Wn];cnt++}if(f-Wn-1>=0){sum-=on[f-Wn-1];cnt--}out[f]=Math.max(0,on[f]-sum/cnt)}
+  let sd=0;for(let f=0;f<F;f++)sd+=out[f]*out[f];sd=Math.sqrt(sd/Math.max(1,F))||1;
+  for(let f=0;f<F;f++)out[f]/=sd;
+  return{on:out,low,fps:sr/hop};
+}
+function estimatePeriod(on){
+  const F=on.length,r=new Float32Array(121);let best=-1,bl=50;
+  for(let lag=30;lag<=120;lag++){let s=0;for(let f=lag;f<F;f++)s+=on[f]*on[f-lag];s/=(F-lag);r[lag]=s;
+    const w=Math.exp(-0.5*Math.pow(Math.log2(lag/50)/0.9,2));if(s*w>best){best=s*w;bl=lag}}
+  let mean=0;for(let lag=30;lag<=120;lag++)mean+=r[lag];mean/=91;S.tempoConf=mean>0?r[bl]/mean:0;
+  let P=bl;if(bl>30&&bl<120){const a=r[bl-1],b=r[bl],c=r[bl+1],den=a+c-2*b;if(den<0)P=bl+(a-c)/(2*den)*0.5}
+  return P;
+}
+function trackBeats(on,P){
+  const F=on.length,C=new Float32Array(F),B=new Int32Array(F).fill(-1),lo=Math.max(1,Math.round(P/2)),hi=Math.round(P*2),alpha=100;
+  for(let t=0;t<F;t++){let best=-Infinity,bi=-1;
+    for(let u=Math.max(0,t-hi);u<=t-lo;u++){const v=C[u]-alpha*Math.pow(Math.log((t-u)/P),2);if(v>best){best=v;bi=u}}
+    if(bi>=0&&best>0){C[t]=on[t]+best;B[t]=bi}else C[t]=on[t]}
+  let end=F-1,m=-Infinity;for(let t=Math.max(0,F-Math.round(P));t<F;t++)if(C[t]>m){m=C[t];end=t}
+  const beats=[];for(let t=end;t>=0;t=B[t]){beats.push(t);if(B[t]<0)break}
+  return beats.reverse();
+}
+function analyseRhythm(keepPeriod){
+  const src=S.stem?{L:S.iL,R:S.iR}:S.mix;
+  if(!S.onset||!keepPeriod)S.onset=onsetEnvelope(src.L,src.R,S.sr);
+  const {on,fps}=S.onset;
+  if(!keepPeriod)S.period=estimatePeriod(on);
+  const bf=trackBeats(on,S.period);
+  S.beats=bf.map(f=>f/fps);S.bpm=60*fps/S.period;
+  if(S.tempoConf<1.25||S.beats.length<8){S.beats=null;$('#bpmV').textContent='no detectat';$('#rhythmV').textContent='Tempo no detectat: l’entrada serà de 2 segons de base.';return}
+  if(!keepPeriod)S.dbShift=bestDownbeat();
+  $('#bpmV').textContent='♩ '+Math.round(S.bpm);$('#rhythmV').textContent='Tempo ♩ '+Math.round(S.bpm)+' · compàs de '+$('#meter').value+' · si no quadra, corregeix-ho als ajustos avançats.';
+}
+function bestDownbeat(){
+  const m=+$('#meter').value,{low,fps}=S.onset,sc=new Array(m).fill(0);
+  S.beats.forEach((t,i)=>{const f=Math.round(t*fps);let v=0;for(let k=-2;k<=2;k++)v=Math.max(v,low[f+k]||0);sc[i%m]+=v});
+  const ph=new Array(m).fill(0);
+  for(const p of S.phrases||[]){const on=(p.raw?p.raw.s:p.start)+0.08;let bi=-1,bd=0.15;S.beats.forEach((t,i)=>{const d=Math.abs(t-on);if(d<bd){bd=d;bi=i}});if(bi>=0)ph[bi%m]++}
+  const mk=Math.max(...sc)||1,mp=Math.max(...ph)||1,tot=sc.map((v,i)=>v/mk+1.2*ph[i]/mp);
+  return tot.indexOf(Math.max(...tot));
+}
+function beatInBar(i){const m=+$('#meter').value;return(((i-S.dbShift)%m)+m)%m}
+function downbeats(){return S.beats?S.beats.filter((t,i)=>beatInBar(i)===0):[]}
+function eighthGrid(){const b=S.beats||[],g=[];for(let i=0;i<b.length;i++){g.push(b[i]);if(i+1<b.length)g.push((b[i]+b[i+1])/2)}return g}
+function snapPhrases(){
+  if(!$('#oSnap').checked||!S.beats||S.beats.length<8)return;
+  const g=eighthGrid();if(!g.length)return;
+  for(const p of S.phrases){
+    const r=p.raw||{s:p.start,e:p.end};
+    const on=r.s+0.08;let s=null,bestD=1;
+    for(const x of g){const d=Math.abs(x-on);if(d<0.08&&d<bestD){bestD=d;s=x}}
+    if(s===null){for(const x of g)if(x<=on-0.02)s=x;else break}
+    const ve=r.e-0.18;let e=null;for(const x of g)if(x>=ve+0.04){e=x;break}
+    if(s!==null)p.start=s;if(e!==null)p.end=e;
+  }
+  for(let i=1;i<S.phrases.length;i++){const a=S.phrases[i-1],b=S.phrases[i];if(a.end>b.start)a.end=b.start}
+  S.phrases=S.phrases.filter(p=>p.end-p.start>=0.3);
+  S.phrases.forEach(p=>p.ref=null);
+}
+// where to start playback so the phrase is entered on the beat: the bar line before it, with clicks on each beat
+function entryFor(ph){
+  const N=+$('#oPre').value;
+  if(!N)return{from:ph.start,clicks:[]};
+  if(S.beats&&S.beats.length>8){
+    const bar=(+$('#meter').value)*S.period/S.onset.fps,db=downbeats();
+    while(db.length&&db[0]-bar>=-0.02)db.unshift(Math.max(0,db[0]-bar));
+    let d=null;for(let i=db.length-1;i>=0;i--)if(ph.start-db[i]>=(N-0.25)*bar-0.05){d=db[i];break}
+    if(d!=null&&ph.start-d<(N+1)*bar){
+      const clicks=[];S.beats.forEach((t,i)=>{if(t>=d-0.01&&t<ph.start-0.05)clicks.push({t,n:beatInBar(i)+1})});
+      return{from:d,clicks};
+    }
+  }
+  return{from:Math.max(0,ph.start-2*N),clicks:[]};
+}
+
+/* ---------- start screen and drag & drop ---------- */
+function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;if(!has)$('#work').hidden=true}
+async function loadMixFile(f){
+  if(!f)return;
+  setStatus('Llegint '+f.name+'…');$('#startPanel').querySelector('.start-s').textContent='Llegint '+f.name+'…';
+  let b;
+  try{b=await ac().decodeAudioData(await f.arrayBuffer())}
+  catch(err){setStatus('');$('#startPanel').querySelector('.start-s').textContent='No he pogut llegir «'+f.name+'» ('+errMsg(err)+'). Prova amb un altre format (MP3, WAV, M4A) o amb Chrome.';toast('No he pogut llegir aquest fitxer d’àudio.');return}
+  try{
+    cancel();S.mix=toLR(b);S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;$('#bFullPlay').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
+  }catch(err){console.error(err);setStatus('');toast('He llegit la cançó però ha fallat l’anàlisi: '+errMsg(err));return}
+  let cached=false;try{cached=await modelCached()}catch(e){}
+  if(cached)separateVoice();else toast('Cançó carregada. Ara separa la veu (pas 2).');
+}
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();$('#startPanel').classList.add('over')}}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{$('#startPanel').classList.remove('over')}));
+document.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;e.preventDefault();if(!/^audio\//.test(f.type)&&!/\.(mp3|wav|m4a|aac|ogg|flac|aiff?)$/i.test(f.name)){toast('Això no sembla un fitxer d’àudio.');return}loadMixFile(f)});
+
+/* ---------- loading ---------- */
+function resample(x,from,to){if(from===to)return x;const n=Math.floor(x.length*to/from),y=new Float32Array(n),r=from/to;for(let i=0;i<n;i++){const p=i*r,a=Math.floor(p),f=p-a;y[i]=(x[a]||0)*(1-f)+(x[a+1]||0)*f}return y}
+function toLR(b){let L=b.getChannelData(0),R=b.numberOfChannels>1?b.getChannelData(1):L;
+  if(b.sampleRate!==44100){const mono=L===R;L=resample(L,b.sampleRate,44100);R=mono?L:resample(R,b.sampleRate,44100)}
+  return{L,R,sr:44100}}
+function loadSong(keepPhrases){
+  buildSources();analyse();
+  try{analyseRhythm(false)}catch(e){console.warn(e);S.beats=null}
+  viewAll();S.mpeaks=null;S.sel=null;
+  const ready=!!S.stem||S.approx;
+  if(!keepPhrases){S.phrases=[];if(ready){detect();if(S.beats)S.dbShift=bestDownbeat()}S.cur=S.phrases.length?0:-1;S.take=null;S.cursor=0}
+  else S.phrases.forEach(p=>p.ref=null);
+  $('#work').hidden=!ready;$('#fullRow').hidden=!ready;$('#lDom').hidden=!S.stem;$('#lCons').hidden=!S.stem;
+  $('#songName').textContent=S.name;
+  const dur=S.len/S.sr;
+  $('#songMeta').textContent=fmt(dur)+' · '+(S.mono?'mono':'estèreo')+' · '+Math.round(S.sr/100)/10+' kHz';
+  const note=S.demo?'Exemple sintètic amb la pista de veu separada. Carrega la teva cançó per treballar-la.'
+    :S.stem?''
+    :S.approx?(S.mono?'Fitxer mono sense separar: la veu guia és la cançó sencera. Les frases poden incloure trossos instrumentals i la melodia serà poc fiable.':'Sense separar: la veu guia és el centre de l’estèreo i la base, els laterals. Les frases poden incloure trossos instrumentals i la melodia serà menys fiable.')
+    :'';
+  $('#sepNote').textContent=note;$('#sepNote').hidden=!note;
+  renderSep();
+  renderAll();
+}
+$('#fMix').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';loadMixFile(f)});
+$('#fStem').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  setStatus('Llegint '+f.name+'…');
+  try{
+    const b=await ac().decodeAudioData(await f.arrayBuffer());cancel();
+    const st=toLR(b);
+    if(!S.mix||S.demo){S.mix=st;S.name=f.name.replace(/\.[^.]+$/,'');S.demo=false}
+    S.stem=st;S.inst=null;S.sepBy='file';S.approx=false;
+    const hasTakes=S.phrases.some(p=>p.takes.length);
+    setStatus('');loadSong(hasTakes);
+    toast(hasTakes?'Pista de veu carregada. He mantingut les frases i les preses.':'Pista de veu carregada. Frases detectades de nou.');
+  }catch(err){setStatus('');toast('No he pogut llegir aquest fitxer d’àudio.')}
+});
+
+/* ---------- synthetic demo song (original melody) ---------- */
+function makeDemo(){
+  const sr=44100,beat=60/96;
+  const mel=[[null,4],
+    [67,1],[67,.5],[69,.5],[71,1],[69,1],[67,2],[null,2],
+    [71,1],[72,1],[74,1.5],[72,.5],[71,2],[null,2],
+    [74,.5],[72,.5],[71,.5],[69,.5],[67,1],[69,1],[71,2],[null,2],
+    [69,1],[67,1],[66,1],[69,1],[67,4],[null,4]];
+  let t=0;const notes=[];
+  for(const[m,b]of mel){if(m!==null)notes.push({m,s:t,e:t+b*beat});t+=b*beat}
+  const dur=t,n=Math.ceil(dur*sr)+sr;
+  const voice=new Float32Array(n),L=new Float32Array(n),R=new Float32Array(n);
+  let phase=0;
+  notes.forEach((no,k)=>{
+    const prev=notes[k-1],next=notes[k+1];
+    const pa=prev&&Math.abs(prev.e-no.s)<1e-6,na=next&&Math.abs(next.s-no.e)<1e-6;
+    const s0=Math.round(no.s*sr),s1=Math.round(no.e*sr)-(na?0:Math.round(0.05*sr));
+    const f0=440*Math.pow(2,(no.m-69)/12),H=[];
+    for(let h=1;h<=14;h++){const fh=h*f0;if(fh>sr/2.2)break;H.push((Math.exp(-((fh-800)**2)/(2*180**2))+.6*Math.exp(-((fh-1200)**2)/(2*220**2))+.5*Math.exp(-((fh-2600)**2)/(2*300**2))*.4+.12)/Math.sqrt(h))}
+    for(let i=s0;i<s1;i++){
+      const tt=(i-s0)/sr;let m=no.m;
+      if(pa&&tt<0.07){const u=tt/0.07,sm=u*u*(3-2*u);m=prev.m+(no.m-prev.m)*sm}
+      const vib=tt>0.25?0.22*Math.sin(2*Math.PI*5.4*i/sr)*Math.min(1,(tt-0.25)/0.3):0;
+      phase+=2*Math.PI*440*Math.pow(2,(m+vib-69)/12)/sr;
+      let a=pa?1-0.18*Math.exp(-tt/0.03):Math.min(1,tt/0.05);
+      if(!na)a*=Math.min(1,(s1-i)/sr/0.08);
+      let v=0;for(let h=0;h<H.length;h++)v+=H[h]*Math.sin((h+1)*phase);
+      voice[i]=a*v;
+    }
+    // consonant before the syllable: 45 ms of bright noise, plus a short dip
+    {let sd=11+k;const r=()=>(sd=(sd*16807)%2147483647)/2147483647*2-1;let hx=0,hy=0,hx2=0,hy2=0;const ah=Math.exp(-2*Math.PI*4000/sr),al=Math.exp(-2*Math.PI*9000/sr);let lp=0;
+     const c0=s0-Math.round(0.045*sr),c1=s0+Math.round(0.01*sr);
+     for(let i=Math.max(0,c0);i<c1;i++){const w=r();let h=ah*(hy+w-hx);hx=w;hy=h;let h2=ah*(hy2+h-hx2);hx2=h;hy2=h2;lp=(1-al)*h2+al*lp;const u=(i-c0)/(c1-c0);voice[i]=voice[i]*(i<s0?0.12:0.3+0.7*((i-s0)/(c1-s0)))+2.5*lp*Math.sin(Math.PI*u)}}
+  });
+  const chords=['G','G','C','D','Em','C','Am','D','G','G'];
+  const tri={G:[55,59,62],C:[52,55,60],D:[54,57,62],Em:[52,55,59],Am:[52,57,60]};
+  const bass={G:43,C:48,D:50,Em:40,Am:45};
+  const pans=[[.85,.25],[.6,.6],[.25,.85]];
+  const pluck=(m,t0,amp,decay,pl,pr,h2,h3)=>{
+    const f=440*Math.pow(2,(m-69)/12),a=Math.round(t0*sr),len=Math.min(n-a,Math.round(decay*5*sr));
+    for(let i=0;i<len;i++){const tt=i/sr,e=amp*Math.exp(-tt/decay)*Math.min(1,tt/0.004);
+      const v=e*(Math.sin(2*Math.PI*f*tt)+h2*Math.sin(4*Math.PI*f*tt)+h3*Math.sin(6*Math.PI*f*tt));L[a+i]+=v*pl;R[a+i]+=v*pr}
+  };
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647*2-1;
+  for(let bar=0;bar<chords.length;bar++){
+    const c=chords[bar];
+    for(let b=0;b<4;b++){
+      const t0=(bar*4+b)*beat;if(t0>=dur)break;
+      tri[c].forEach((m,j)=>pluck(m,t0+j*0.012,0.11,0.32,pans[j][0],pans[j][1],.4,.2));
+      if(b===0||b===2)pluck(bass[c],t0,0.26,0.55,.7,.7,.25,0);
+      const h=Math.round((t0+beat/2)*sr);let lp=0;
+      for(let i=0;i<Math.round(0.04*sr)&&h+i<n;i++){const w=rnd(),hp=w-lp;lp=w;const e=0.05*Math.exp(-i/sr/0.012);L[h+i]+=hp*e*.25;R[h+i]+=hp*e*.7}
+    }
+  }
+  let pk=0;
+  for(let i=0;i<n;i++){L[i]+=.55*voice[i];R[i]+=.55*voice[i];pk=Math.max(pk,Math.abs(L[i]),Math.abs(R[i]))}
+  const g=0.89/pk,stem=new Float32Array(n);
+  for(let i=0;i<n;i++){L[i]*=g;R[i]*=g;stem[i]=.55*voice[i]*g}
+  S.mix={L,R,sr};S.stem={L:stem,R:stem,sr};S.inst=null;S.sepBy='demo';S.demo=true;S.name='Exemple sintètic';
+}
+
+/* ---------- AI vocal separation (Demucs v4 in the browser, via demucs-web + ONNX Runtime Web) ---------- */
+const ORT_URL='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/';
+const DEMUCS_URL='https://cdn.jsdelivr.net/npm/demucs-web@1.0.2/src/index.js';
+const MODEL_FALLBACK='https://huggingface.co/timcsy/demucs-web-onnx/resolve/main/htdemucs_embedded.onnx';
+let sepProc=null,sepBusy=false,modelUrl=null;
+async function openCache(){try{return window.caches?await caches.open('mirall-de-veu-models'):null}catch(e){return null}}
+async function modelCached(){const c=await openCache();if(!c)return false;try{return!!(await c.match(MODEL_FALLBACK))||!!(modelUrl&&await c.match(modelUrl))}catch(e){return false}}
+async function fetchModel(url,onDl){
+  const cache=await openCache();
+  if(cache){try{const hit=await cache.match(url);if(hit){onDl(1,1,true);return await hit.arrayBuffer()}}catch(e){}}
+  const r=await fetch(url);if(!r.ok)throw new Error('model '+r.status);
+  const total=+r.headers.get('Content-Length')||0;
+  let buf;
+  if(r.body&&r.body.getReader){
+    const rd=r.body.getReader(),parts=[];let got=0;
+    for(;;){const{done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;onDl(got,total||170e6)}
+    const u=new Uint8Array(got);let o=0;for(const p of parts){u.set(p,o);o+=p.length}buf=u.buffer;
+  }else buf=await r.arrayBuffer();
+  if(cache){try{await cache.put(url,new Response(buf.slice(0),{headers:{'Content-Type':'application/octet-stream'}}))}catch(e){}}
+  return buf;
+}
+function sepUI(msg,frac){
+  $('#sepMsg').textContent=msg;
+  const pr=$('#sepProg');pr.hidden=frac==null;if(frac!=null)$('#sepBar').style.width=Math.round(frac*100)+'%';
+}
+function renderSep(){
+  const row=$('#sepRow');
+  if(S.demo||!S.mix){row.hidden=true;return}
+  row.hidden=false;
+  const done=S.sepBy==='ai'||S.sepBy==='file';
+  row.classList.toggle('done',done);
+  $('#bSep').hidden=done||sepBusy;$('#lStem').hidden=done||sepBusy;$('#bApprox').hidden=done||sepBusy||S.approx;
+  $('#sepDl').hidden=!done;
+  if(!sepBusy&&!done&&IS_FILE&&IS_SAFARI){sepUI('Safari sol bloquejar la separació quan l’eina s’obre des d’un fitxer del disc. Obre aquest mateix fitxer amb Google Chrome (botó dret › Obre amb › Google Chrome).',null);return}
+  if(!sepBusy)sepUI(done?(S.sepBy==='ai'?(S.sepInfo||'Veu separada amb IA.'):'Veu separada a partir de la pista que has carregat. Les frases i la melodia surten només d’aquesta pista.')
+    :S.approx?'Estàs treballant sense separar la veu. Pots separar-la quan vulguis: les frases es tornaran a detectar sobre la veu.'
+    :'Cal fer-ho abans de res: les frases i la melodia es treuen només de la pista de veu. Es fa al teu ordinador; la primera vegada descarrega el model (uns 170 MB) i després el recorda.',null);
+}
+$('#bApprox').addEventListener('click',()=>{if(!S.mix)return;S.approx=true;cancel();loadSong(false);toast('Frases detectades de manera aproximada. Separa la veu quan puguis.')});
+let sepLib=null,sepOrt=null,sepBuf=null,sepBackend='';
+const mmss=ms=>{const t=Math.round(ms/1000);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+function checkStem(a){let s=0,bad=0,c=0;for(let i=0;i<a.length;i+=61){const v=a[i];if(!Number.isFinite(v))bad++;else{s+=v*v;c++}}return{bad,rms:Math.sqrt(s/Math.max(1,c))}}
+async function makeProc(providers){
+  const proc=new sepLib.DemucsProcessor({ort:sepOrt,onLog:()=>{},sessionOptions:{executionProviders:providers},
+    onProgress:p=>{const f=typeof p==='number'?p:(p&&p.progress)||0;const el=performance.now()-S.sepT0;
+      const eta=f>0.03?' · falten uns '+mmss(el/f-el):'';
+      sepUI('Separant la veu amb '+sepBackend+'… '+Math.round(f*100)+'% · '+mmss(el)+eta,f)}});
+  sepUI('Preparant el model ('+sepBackend+'). Pot trigar fins a un minut…',1);
+  await proc.loadModel(sepBuf.slice(0));
+  return proc;
+}
+async function separateVoice(){
+  if(sepBusy||!S.mix||S.demo)return;
+  sepBusy=true;renderSep();sepUI('Començant…',0);
+  const mixRef=S.mix;
+  try{
+    if(!sepProc){
+      sepUI('Carregant el motor de separació…',0);
+      const withTimeout=(pr,ms,what)=>Promise.race([pr,new Promise((_,rej)=>setTimeout(()=>rej(new Error(what)),ms))]);
+      sepOrt=await withTimeout(import(ORT_URL+'ort.all.mjs'),45000,'no s’ha pogut carregar el motor (ONNX Runtime) des d’internet');
+      sepOrt.env.wasm.wasmPaths=ORT_URL;
+      sepOrt.env.wasm.numThreads=self.crossOriginIsolated?(navigator.hardwareConcurrency||4):1;
+      if(sepOrt.env.webgpu)sepOrt.env.webgpu.powerPreference='high-performance';
+      sepLib=await withTimeout(import(DEMUCS_URL),45000,'no s’ha pogut carregar la llibreria Demucs des d’internet');
+      modelUrl=(sepLib.CONSTANTS&&sepLib.CONSTANTS.DEFAULT_MODEL_URL)||MODEL_FALLBACK;
+      sepBuf=await fetchModel(modelUrl,(l,t,hit)=>sepUI(hit?'Model ja descarregat.':'Descarregant el model… '+Math.round(l/1e6)+' de '+Math.round(t/1e6)+' MB',hit?1:l/t));
+      let gpu=false;try{gpu=!!(navigator.gpu&&await navigator.gpu.requestAdapter())}catch(e){}
+      if(gpu){sepBackend='la targeta gràfica';try{sepProc=await makeProc(['webgpu'])}catch(e){console.warn('webgpu',e);sepProc=null}}
+      if(!sepProc){sepBackend='el processador (més lent)';sepProc=await makeProc(['wasm'])}
+    }
+    S.sepT0=performance.now();
+    sepUI('Separant la veu amb '+sepBackend+'… 0%',0);
+    let res=await sepProc.separate(mixRef.L,mixRef.R);
+    let ck=checkStem(res.vocals.left);
+    if((ck.bad||ck.rms<1e-5)&&sepBackend==='la targeta gràfica'){
+      // some GPUs return empty/NaN output: retry on the CPU
+      sepBackend='el processador (més lent)';sepProc=await makeProc(['wasm']);S.sepT0=performance.now();
+      res=await sepProc.separate(mixRef.L,mixRef.R);ck=checkStem(res.vocals.left);
+    }
+    if(ck.bad||ck.rms<1e-5)throw new Error('la pista de veu ha sortit buida');
+    if(S.mix!==mixRef)return;
+    // the base is the song minus the separated voice (does not depend on how the other stems are returned)
+    S.stem={L:res.vocals.left,R:res.vocals.right,sr:44100};S.inst=null;S.sepBy='ai';
+    // re-detect phrases on the voice; keep any takes by moving them to the new phrase they overlap most
+    const old=S.phrases;S.approx=false;sepBusy=false;cancel();loadSong(false);
+    for(const op of old)for(const t of op.takes){
+      let best=null,bo=0;for(const np of S.phrases){const o=Math.min(op.end,np.end)-Math.max(op.start,np.start);if(o>bo){bo=o;best=np}}
+      if(best){t.autoOff=null;best.takes.push(t)}
+    }
+    S.sepInfo='Veu separada en '+mmss(performance.now()-S.sepT0)+' amb '+sepBackend+'. '+S.phrases.length+' frases detectades a la pista de veu'+((S.ghosts||[]).length?' i '+S.ghosts.length+' trams dubtosos en gris':'')+'.';
+    renderAll();renderSep();
+    toast('Veu separada. '+S.phrases.length+' frases detectades a la veu.');
+  }catch(err){
+    console.error(err);sepBusy=false;renderSep();
+    sepUI('No he pogut separar la veu: '+errMsg(err)+'. '+(IS_FILE?(IS_SAFARI?'Safari sol bloquejar el motor quan l’eina s’obre des d’un fitxer del disc: obre-la amb Google Chrome. ':'Pot ser que el navegador no deixi carregar el motor des d’un fitxer obert del disc. '):'')+'Alternativa: separa-la amb Ultimate Vocal Remover i carrega-la a «Pista de veu aïllada».',null);
+  }finally{if(sepBusy){sepBusy=false;renderSep()}}
+}
+$('#bSep').addEventListener('click',separateVoice);
+function wavBlob(chs,sr){
+  const nc=chs.length,n=chs[0].length,buf=new ArrayBuffer(44+n*2*nc),v=new DataView(buf),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+n*2*nc,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,nc,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2*nc,true);v.setUint16(32,2*nc,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2*nc,true);
+  let o=44;for(let i=0;i<n;i++)for(let c=0;c<nc;c++){const s=Math.max(-1,Math.min(1,chs[c][i]));v.setInt16(o,s<0?s*0x8000:s*0x7fff,true);o+=2}
+  return new Blob([buf],{type:'audio/wav'});
+}
+function saveBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
+$('#dlVoc').addEventListener('click',()=>saveBlob(wavBlob([S.vL,S.vR],S.sr),S.name+' - veu.wav'));
+$('#dlInst').addEventListener('click',()=>saveBlob(wavBlob([S.iL,S.iR],S.sr),S.name+' - base.wav'));
+
+/* ---------- playback ---------- */
+let playing=[];
+function stopAll(){playing.forEach(s=>{try{s.stop()}catch(e){}});playing=[];S.play=null;S.tplay=null}
+function makeBuf(chs,sr){const b=ac().createBuffer(chs.length,Math.max(1,chs[0].length),sr);chs.forEach((d,i)=>b.copyToChannel(d,i));return b}
+let verbIR=null;
+function reverbIR(){
+  const c=ac();if(verbIR&&verbIR.sampleRate===c.sampleRate)return verbIR;
+  const sr=c.sampleRate,len=Math.round(sr*2.2),ir=c.createBuffer(2,len,sr);let seed=5;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647*2-1;
+  for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);let lp=0;const a=Math.exp(-2*Math.PI*4500/sr);
+    for(let i=0;i<len;i++){const t=i/sr;lp=(1-a)*rnd()+a*lp;d[i]=lp*Math.exp(-t*2.6)*(t<0.012?t/0.012:1)}}
+  verbIR=ir;return ir;
+}
+// opts: {pan, offset (s into the buffer), reverb (0..1), onPhrase (phrase-relative start, for the stage playhead)}
+function playChannels(chs,sr,when,pan,opts){
+  opts=opts||{};const c=ac(),src=c.createBufferSource();src.buffer=makeBuf(chs,sr);
+  let node=src;if(pan!=null&&c.createStereoPanner){const p=c.createStereoPanner();p.pan.value=pan;src.connect(p);node=p}
+  node.connect(c.destination);
+  if(opts.reverb>0){const conv=c.createConvolver();conv.buffer=reverbIR();const wet=c.createGain();wet.gain.value=opts.reverb;node.connect(conv);conv.connect(wet);wet.connect(c.destination)}
+  const t=when||c.currentTime+0.03,off=Math.max(0,opts.offset||0);src.start(t,off);playing.push(src);
+  src.onended=()=>{playing=playing.filter(x=>x!==src)};
+  if(opts.onPhrase!=null)S.tplay={t0:t,from:opts.onPhrase,to:opts.onPhrase+(chs[0].length/sr-off)};
+  return{src,t};
+}
+const verbAmt=()=>+($('#oVerb').value||0);
+// play the selected take from a phrase-relative time, with reverb; returns the scheduled start
+function playTake(t,ph,fromPh,when,pan){
+  const cd=compareData(ph,t),off=cd.off;         // take time = phrase time + off
+  const from=Math.max(0,(fromPh||0)+off);
+  return playChannels([t.data],t.sr,when,pan,{offset:from,reverb:verbAmt(),onPhrase:from-off});
+}
+function segmentMix(s,e,gv,ga,vFrom){
+  const a=Math.max(0,Math.round(s*S.sr)),b=Math.min(S.len,Math.round(e*S.sr)),n=Math.max(1,b-a);
+  const L=new Float32Array(n),R=new Float32Array(n),vi=vFrom==null?-1:Math.round(vFrom*S.sr)-a,fade=Math.round(0.03*S.sr);
+  for(let i=0;i<n;i++){const k=vi<0?gv:i<vi-fade?0:i<vi?gv*(i-vi+fade)/fade:gv;L[i]=k*S.vL[a+i]+ga*S.iL[a+i];R[i]=k*S.vR[a+i]+ga*S.iR[a+i]}
+  return[L,R];
+}
+function playSegment(s,e,gv,ga,when,pan,vFrom){const r=playChannels(segmentMix(s,e,gv,ga,vFrom),S.sr,when,pan);S.play={t0:r.t,from:s,to:e};return r}
+function scheduleEntry(en,start,end){
+  // clicks on each beat of the lead-in, accented on 1; the count is shown big in the status line
+  S.countIn=en.clicks.length?{clicks:en.clicks.map(k=>({t:start+(k.t-en.from),n:k.n})),end,meter:+$('#meter').value,shown:-1}:null;
+}
+function beep(t,f=1000){const c=ac(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.25,t+0.005);g.gain.exponentialRampToValueAtTime(0.001,t+0.09);o.connect(g).connect(c.destination);o.start(t);o.stop(t+0.1)}
+
+/* ---------- run control ---------- */
+let runId=0;
+function cancel(){runId++;if(fullRec){fullRec=null;rec.active=false;rec.chunks=[];S.recInfo=null;S.live=null;$('#bFull').hidden=false;$('#bFullStop').hidden=true;$('#fullInfo').textContent='Gravació aturada sense desar.'}stopAll();S.notePlay=null;setPhase(null);if(S.armed){S.armed=false;S.recInfo=null;S.live=null;rec.active=false;renderDesk()}}
+function waitUntil(t,id){return new Promise(res=>{const f=()=>{if(id!==runId)return res(false);if(ac().currentTime>=t)return res(true);setTimeout(f,25)};f()})}
+function setStatus(html){$('#status').innerHTML=html}
+function setPhase(name,html){
+  ['bListen','bRec','bCycle'].forEach(id=>$('#'+id).classList.remove('active'));
+  if(name==='listen')$('#bListen').classList.add('active');
+  if(name==='rec')$('#bRec').classList.add('active');
+  if(name)$('#bCycle').classList.toggle('active',S.inCycle);
+  setStatus(html||'');
+}
+
+/* ---------- microphone ---------- */
+const rec={active:false,chunks:[],peak:0};
+let mic=null;
+const WORKLET=`class Tap extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(2048);this.n=0;this.t=0}
+process(inp){const ch=inp[0]&&inp[0][0];if(ch){if(this.n===0)this.t=currentTime;this.b.set(ch,this.n);this.n+=ch.length;
+if(this.n>=2048){this.port.postMessage({t:this.t,d:this.b.slice(0,this.n)});this.n=0}}return true}}
+registerProcessor('tap',Tap);`;
+async function ensureMic(){
+  if(mic)return mic;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nomic');
+  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  const c=ac(),src=c.createMediaStreamSource(stream),z=c.createGain();z.gain.value=0;
+  const onData=msg=>{const d=msg.d;let p=0;for(let i=0;i<d.length;i+=4){const v=Math.abs(d[i]);if(v>p)p=v}rec.peak=Math.max(p,rec.peak*0.85);if(rec.active){rec.chunks.push(msg);liveFeed(msg)}};
+  let node=null;
+  // AudioWorklet when the page is served from a web address; ScriptProcessor fallback for a file opened from disk
+  for(const url of[URL.createObjectURL(new Blob([WORKLET],{type:'application/javascript'})),'data:application/javascript,'+encodeURIComponent(WORKLET)]){
+    try{await c.audioWorklet.addModule(url);node=new AudioWorkletNode(c,'tap');node.port.onmessage=e=>onData(e.data);break}catch(e){node=null}
+  }
+  if(!node){
+    node=c.createScriptProcessor(2048,1,1);
+    node.onaudioprocess=e=>onData({t:e.playbackTime-2048/c.sampleRate,d:e.inputBuffer.getChannelData(0).slice()});
+  }
+  src.connect(node);node.connect(z).connect(c.destination);
+  mic={stream,node};$('#bMic').textContent='Micròfon actiu';return mic;
+}
+function micFail(err){
+  setPhase(null,'<span>No tinc accés al micròfon. Dona permís al navegador (icona del cadenat a la barra d’adreces) i torna-ho a provar. Si has obert el fitxer des del disc i no et demana permís, obre’l des d’una adreça web (https).</span>');
+}
+$('#bMic').addEventListener('click',async()=>{try{await ensureMic();toast('Micròfon a punt. Canta una nota per veure el nivell.')}catch(e){micFail(e)}});
+
+/* ---------- actions ---------- */
+async function listen(){
+  const ph=curPh();if(!ph)return;cancel();const id=runId;S.inCycle=false;
+  const en=entryFor(ph),start=ac().currentTime+0.05,lead=ph.start-en.from;
+  playSegment(en.from,ph.end,S.gv,S.ga,start,null,ph.start);scheduleEntry(en,start,start+lead);
+  setPhase('listen','Escoltant la frase '+(S.cur+1)+'…');
+  await waitUntil(start+lead+(ph.end-ph.start)+0.05,id);if(id===runId)setPhase(null);
+}
+async function recordOnly(){
+  const ph=curPh();if(!ph)return;cancel();const id=runId;S.inCycle=false;
+  try{await ensureMic()}catch(e){return micFail(e)}
+  await doRecord(ph,id);
+}
+async function cycle(){
+  const ph=curPh();if(!ph)return;cancel();const id=runId;S.inCycle=true;
+  try{await ensureMic()}catch(e){S.inCycle=false;return micFail(e)}
+  const times=+$('#oTimes').value;
+  for(let k=0;k<times;k++){
+    const en=entryFor(ph),start=ac().currentTime+(k?0.35:0.05),lead=ph.start-en.from;
+    playSegment(en.from,ph.end,S.gv,S.ga,start,null,ph.start);scheduleEntry(en,start,start+lead);
+    setPhase('listen','Escolta '+(k+1)+' de '+times+'…');
+    if(!await waitUntil(start+lead+(ph.end-ph.start)+0.05,id)){S.inCycle=false;return}
+  }
+  await doRecord(ph,id);S.inCycle=false;
+}
+async function doRecord(ph,id){
+  const c=ac(),mode=$('#oBack').value,withAcc=mode!=='none',dur=ph.end-ph.start;
+  S.armed=true;S.take=null;S.cmpCursor=null;renderDesk();
+  const en=entryFor(ph),lead=ph.start-en.from;
+  let start=c.currentTime+0.15;
+  if(!en.clicks.length&&lead<0.5){start+=0.9;setPhase('rec','Prepara’t…')}
+  const t0=start+lead;
+  if(withAcc)playSegment(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?0.3:0,1,start,null,ph.start);
+  scheduleEntry(en,start,t0);
+  setPhase('rec',lead>0.3?'Entra la base… compta i entra a temps':'Prepara’t…');
+  const len=withAcc?dur+1.3:dur*1.3+1.6;   // keep recording a while after the phrase ends, so held last notes are not cut
+  await waitUntil(t0-0.03,id);
+  S.live=[];S.liveMax=0;S.liveLat=withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0;rec.chunks=[];rec.active=true;S.recInfo={t0,len};
+  setPhase('rec','<span class="dot"></span><span>Canta! Gravant <span class="mono" id="recT">0,0</span> s</span><span class="progress"><i id="recBar"></i></span><button class="sbtn" type="button" onclick="cancel()">Atura</button>');
+  await waitUntil(t0+len,id);
+  const endT=Math.min(c.currentTime,t0+len);
+  await sleep(140);rec.active=false;S.recInfo=null;S.live=null;S.liveLat=0;S.armed=false;
+  const ch=rec.chunks;rec.chunks=[];
+  if(!ch.length){setPhase(null,'No ha arribat so del micròfon.');return}
+  const sr=c.sampleRate,tot=ch.reduce((a,x)=>a+x.d.length,0),all=new Float32Array(tot);
+  let o=0;for(const x of ch){all.set(x.d,o);o+=x.d.length}
+  const a=Math.max(0,Math.round((t0-ch[0].t)*sr)),want=Math.round((endT-t0)*sr);
+  const data=all.slice(a,a+want);
+  if(data.length<sr*0.5){setPhase(null,'');return}
+  const n=(ph.takes.reduce((m,t)=>Math.max(m,t.n),0))+1;
+  const take={id:uid++,n,data,sr,withAcc,mode,lat:withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0,nudge:0,track:null,score:null};
+  setPhase(null,'Analitzant…');await sleep(20);
+  take.track=pitchTrack(take.data,take.sr);
+  ph.takes.push(take);S.take=take;
+  const cd=compareData(ph,take);
+  setPhase(null,cd&&cd.n>10?'Presa '+n+' desada. Mira la comparació.':'Presa '+n+' desada, però gairebé no hi he detectat veu. Comprova el nivell del micròfon.');
+  renderPhrases();renderDesk();
+}
+
+/* ---------- full-song recording: sing it through with the base; phrases get their takes afterwards ---------- */
+let fullRec=null;
+async function fullStart(){
+  if(!S.mix||!S.phrases.length||fullRec)return;
+  try{await ensureMic()}catch(e){return micFail(e)}
+  cancel();const id=runId,c=ac();
+  const from=Math.max(0,Math.min(S.cursor,songDur()-1)),start=c.currentTime+0.9,lat=(c.outputLatency||0)+(c.baseLatency||0)+0.01;
+  fullRec={id,from,t0:start,lat,cur:-1};
+  $('#bFull').hidden=true;$('#bFullStop').hidden=false;$('#bFullPlay').hidden=true;
+  $('#fullInfo').textContent='Prepara’t…';
+  const mode=$('#oBack').value;
+  playSegment(from,songDur(),mode==='guide'?0.3:0,mode==='none'?0:S.ga,start);
+  await waitUntil(start-0.03,id);if(!fullRec||fullRec.id!==id)return;
+  rec.chunks=[];rec.active=true;S.live=[];S.liveMax=0;S.liveLat=lat;S.armed=true;S.take=null;S.cmpCursor=null;
+  $('#fullInfo').innerHTML='<span class="dot"></span> Gravant tota la cançó… canta amb la base. <kbd>Esc</kbd> atura i desa.';
+  await waitUntil(start+(songDur()-from)+0.5,id);
+  if(fullRec&&fullRec.id===id)fullStop();
+}
+function fullTick(){
+  if(!fullRec||!AC)return;const pos=fullRec.from+(AC.currentTime-fullRec.t0);
+  let i=S.phrases.findIndex(p=>pos>=p.start-1.0&&pos<p.end+0.3);
+  if(i>=0&&i!==fullRec.cur){fullRec.cur=i;S.cur=i;S.take=null;const ph=S.phrases[i];
+    S.recInfo={t0:fullRec.t0+(ph.start-fullRec.from),len:ph.end-ph.start+1.3};S.live=[];S.liveMax=0;
+    renderPhrases();renderDesk();if(ph.start<V.v0||ph.end>V.v1)keepInView(ph.start)}
+}
+async function fullStop(){
+  const fr=fullRec;if(!fr)return;fullRec=null;
+  const c=ac();rec.active=false;await sleep(140);
+  const ch=rec.chunks;rec.chunks=[];stopAll();S.recInfo=null;S.live=null;S.armed=false;
+  $('#bFull').hidden=false;$('#bFullStop').hidden=true;
+  if(!ch.length){$('#fullInfo').textContent='No ha arribat so del micròfon.';return}
+  const sr=c.sampleRate,tot=ch.reduce((a,x)=>a+x.d.length,0),all=new Float32Array(tot);let o=0;for(const x of ch){all.set(x.d,o);o+=x.d.length}
+  const songToIdx=t=>Math.round((fr.t0+(t-fr.from)-ch[0].t)*sr);
+  const endSong=fr.from+(c.currentTime-fr.t0);
+  S.fullTake={data:all.slice(Math.max(0,songToIdx(fr.from))),sr,from:fr.from,lat:fr.lat};
+  $('#fullInfo').textContent='Analitzant les frases…';await sleep(20);
+  let made=0;
+  for(const ph of S.phrases){
+    if(ph.start<fr.from-0.2||ph.start>endSong-0.5)continue;
+    const a=Math.max(0,songToIdx(ph.start-0.25)),b=Math.min(all.length,songToIdx(ph.end+1.0));if(b-a<sr*0.5)continue;
+    const n=(ph.takes.reduce((m,t)=>Math.max(m,t.n),0))+1;
+    const take={id:uid++,n,data:all.slice(a,b),sr,withAcc:true,mode:'full',lat:fr.lat+0.25,nudge:0,track:null,score:null};
+    take.track=pitchTrack(take.data,sr);ph.takes.push(take);compareData(ph,take);made++;
+  }
+  S.take=null;renderAll();
+  $('#bFullPlay').hidden=false;
+  const scored=S.phrases.filter(p=>p.takes.length&&p.takes[p.takes.length-1].score!=null),avg=scored.length?Math.round(scored.reduce((a,p)=>a+p.takes[p.takes.length-1].score,0)/scored.length):null;
+  $('#fullInfo').textContent='Desat: '+made+' frases amb presa.'+(avg!=null?' Mitjana de notes encertades: '+avg+' %.':'')+' Clica una frase per veure-la.';
+  toast('Cançó sencera gravada: '+made+' frases.');
+}
+function fullPlay(){
+  const ft=S.fullTake;if(!ft)return;cancel();
+  const base=ac().currentTime+0.06,from=Math.max(ft.from,S.cursor>ft.from?S.cursor:ft.from),off=from-ft.from;
+  playSegment(from,songDur(),0,S.ga,base);
+  playChannels([ft.data],ft.sr,base,null,{offset:off+ft.lat,reverb:verbAmt()});
+}
+$('#bFull').addEventListener('click',fullStart);
+$('#bFullStop').addEventListener('click',fullStop);
+$('#bFullPlay').addEventListener('click',fullPlay);
+
+/* ---------- comparison ---------- */
+function compareData(ph,take){
+  const ref=refTrack(ph),tk=take.track||(take.track=pitchTrack(take.data,take.sr));
+  if(take.autoOff==null||take.autoKey!==ref){
+    // start from latency (sung over the base) or from the first sung note (a cappella), then fine-tune by matching the melody
+    const g=take.withAcc?take.lat:onset(tk)-onset(ref),fold=$('#oOct').checked;
+    let best=g,bs=-1;
+    for(let o=g-0.5;o<=g+0.5;o+=0.01){
+      let sc=0;
+      for(let f=0;f<ref.midi.length;f+=2){const r=ref.midi[f];if(isNaN(r))continue;const v=tk.midi[Math.round((f*ref.hop+o)/tk.hop)];if(v===undefined||isNaN(v))continue;
+        let d=v-r;if(fold)d=((d%12)+18)%12-6;if(Math.abs(d)<0.5)sc++}
+      const adj=sc-Math.abs(o-g)*2;
+      if(adj>bs){bs=adj;best=o}
+    }
+    take.autoOff=best;take.autoKey=ref;
+  }
+  let off=take.autoOff+take.nudge;
+  const pairs=[];
+  for(let f=0;f<ref.midi.length;f++){
+    const r=ref.midi[f];if(isNaN(r))continue;
+    const j=Math.round((f*ref.hop+off)/tk.hop),v=tk.midi[j];
+    if(v!==undefined&&!isNaN(v))pairs.push([r,v]);
+  }
+  let oct=0;
+  if($('#oOct').checked&&pairs.length){const ds=pairs.map(p=>p[1]-p[0]).sort((a,b)=>a-b);oct=Math.round(ds[ds.length>>1]/12)*12}
+  let inT=0,sum=0,cnt=0;
+  for(const[r,v]of pairs){const c=(v-oct-r)*100;if(Math.abs(c)<=50)inT++;if(Math.abs(c)<300){sum+=c;cnt++}}
+  const res={ref,tk,off,oct,n:pairs.length,inTune:pairs.length?inT/pairs.length:0,mean:cnt?sum/cnt:0,refSpan:voicedSpan(ref),tkSpan:voicedSpan(tk)};
+  take.score=res.n>10?Math.round(res.inTune*100):null;
+  if(res.n>10){const nh=noteHits(noteSeg(ref),(()=>{const pts=[];for(let f=0;f<tk.midi.length;f++)pts.push({t:f*tk.hop-off,m:tk.midi[f]-oct});return pts})());if(nh&&nh.length)take.score=Math.round(100*nh.filter(Boolean).length/nh.length)}
+  return res;
+}
+function chipFor(sc){if(sc==null)return'<span class="chip none">—</span>';return'<span class="chip '+(sc>=75?'good':sc>=50?'mid':'low')+'">'+sc+'%</span>'}
+
+/* ---------- canvases ---------- */
+function fitCanvas(cv){const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1,w=Math.max(10,Math.round(r.width)),h=Math.max(10,Math.round(r.height));if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr}const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);return{g,w,h}}
+let songStatic=null;
+const V={v0:0,v1:0};               // visible window, seconds
+const songDur=()=>S.mix?S.len/S.sr:0;
+function viewAll(){V.v0=0;V.v1=songDur()}
+function setView(v0,v1){const d=songDur();let span=Math.max(0.5,Math.min(d,v1-v0));v0=Math.max(0,Math.min(d-span,v0));V.v0=v0;V.v1=v0+span;S.peaks=null;S.vpeaks=null;drawSongStatic();drawSong();drawMini()}
+function zoomAt(factor,tAnchor){const span=(V.v1-V.v0)*factor,u=(tAnchor-V.v0)/(V.v1-V.v0);setView(tAnchor-u*span,tAnchor-u*span+span)}
+function viewPhrase(){const ph=curPh();if(!ph)return;const pad=Math.max(0.5,(ph.end-ph.start)*0.3);setView(ph.start-pad,ph.end+pad)}
+function keepInView(t){if(t<V.v0||t>V.v1){const span=V.v1-V.v0;setView(t-span*0.1,t-span*0.1+span)}}
+function peaksFor(L,R,w){
+  const p=new Float32Array(w),a0=V.v0*S.sr,per=(V.v1-V.v0)*S.sr/w,step=Math.max(1,Math.floor(per/40));
+  for(let x=0;x<w;x++){let m=0;const a=Math.max(0,Math.floor(a0+x*per)),b=Math.min(S.len,Math.floor(a0+(x+1)*per));for(let i=a;i<b;i+=step){const v=Math.abs(L[i]+R[i])*.5;if(v>m)m=v}p[x]=m}
+  return p;
+}
+function drawSongStatic(){
+  const cv=$('#cvSong'),{w,h}=fitCanvas(cv);
+  const dpr=window.devicePixelRatio||1;
+  songStatic=document.createElement('canvas');songStatic.width=w*dpr;songStatic.height=h*dpr;
+  const g=songStatic.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  if(!S.mix)return;
+  if(V.v1<=V.v0)viewAll();
+  const span=V.v1-V.v0,X=t=>(t-V.v0)/span*w;
+  if(!S.peaks||S.peaks.length!==w)S.peaks=peaksFor(S.mix.L,S.mix.R,w);
+  const muted=tok('--muted'),ref=tok('--ref'),soft=tok('--ref-soft'),ink=tok('--ink'),line=tok('--line');
+  // time ruler
+  const stepT=span>120?30:span>60?10:span>20?5:span>8?2:span>3?1:span>1.2?0.5:0.1;
+  g.font='10px '+tok('--mono');g.textBaseline='top';
+  for(let t=Math.ceil(V.v0/stepT)*stepT;t<=V.v1;t+=stepT){const x=Math.round(X(t));g.fillStyle=line;g.fillRect(x,0,1,h);g.fillStyle=muted;g.fillText(stepT<1?dec(t,1)+'s':fmt(t),x+3,2)}
+  // beat grid
+  if(S.beats&&S.beats.length>8){const px=(S.beats[1]-S.beats[0])/span*w;
+    if(px>3)S.beats.forEach((t,i)=>{if(t<V.v0||t>V.v1)return;const one=beatInBar(i)===0;g.fillStyle=ink;g.globalAlpha=one?.32:.1;g.fillRect(Math.round(X(t)),one?0:h*.7,1,one?h:h*.3)});
+    else downbeats().forEach(t=>{if(t<V.v0||t>V.v1)return;g.fillStyle=ink;g.globalAlpha=.25;g.fillRect(Math.round(X(t)),0,1,h)});
+    g.globalAlpha=1}
+  // phrases
+  S.phrases.forEach((p,i)=>{
+    if(p.end<V.v0||p.start>V.v1)return;
+    const a=X(p.start),b=X(p.end);
+    g.fillStyle=soft;g.fillRect(a,0,b-a,h);
+    if(i===S.cur){g.fillStyle=soft;g.fillRect(a,0,b-a,h);g.strokeStyle=ref;g.lineWidth=2;g.strokeRect(a+1,1,b-a-2,h-2)}
+    g.fillStyle=ref;g.fillRect(a,0,2,h);g.fillRect(b-2,0,2,h);
+    g.font='700 12px '+tok('--display');g.textBaseline='alphabetic';g.fillStyle=i===S.cur?ink:ref;
+    if(b-a>14)g.fillText(String(i+1),a+5,26);
+  });
+  // doubtful stretches
+  (S.ghosts||[]).forEach(gh=>{
+    if(gh.end<V.v0||gh.start>V.v1)return;
+    const a=X(gh.start),b=X(gh.end);
+    g.save();g.setLineDash([5,4]);g.strokeStyle=muted;g.lineWidth=1.5;g.strokeRect(a+1,1,b-a-2,h-2);g.restore();
+    g.fillStyle=muted;g.globalAlpha=.12;g.fillRect(a,0,b-a,h);g.globalAlpha=1;
+    g.font='700 12px '+tok('--display');g.textBaseline='alphabetic';g.fillStyle=muted;if(b-a>22)g.fillText('?',a+6,26);
+  });
+  // waveforms: song faint, voice in colour
+  const mid=h/2+6,amp=h/2-14;
+  g.fillStyle=muted;g.globalAlpha=S.stem?.28:.55;
+  for(let x=0;x<w;x++){const v=Math.min(1,S.peaks[x]*1.1)*amp;g.fillRect(x,mid-v,1,v*2||1)}
+  g.globalAlpha=1;
+  if(S.stem){
+    if(!S.vpeaks||S.vpeaks.length!==w)S.vpeaks=peaksFor(S.vL,S.vR,w);
+    g.fillStyle=ref;g.globalAlpha=.85;
+    for(let x=0;x<w;x++){const v=Math.min(1,S.vpeaks[x]*1.1)*amp;if(v>0.5)g.fillRect(x,mid-v,1,v*2)}
+    g.globalAlpha=1;
+  }
+  // sung notes (stable pitch) as a thin strip at the bottom: what the detector counts as singing
+  if(S.stable){g.fillStyle=ref;g.globalAlpha=.9;const f0=Math.floor(V.v0/S.hop),f1=Math.ceil(V.v1/S.hop);
+    for(let f=f0;f<f1;f++){if(!S.stable[f])continue;const x0=X(f*S.hop),x1=X((f+1)*S.hop);g.fillRect(x0,h-5,Math.max(1,x1-x0),3)}
+    g.globalAlpha=1}
+  if(S.sel){g.fillStyle=tok('--you-soft');g.fillRect(X(S.sel[0]),0,X(S.sel[1])-X(S.sel[0]),h);g.strokeStyle=tok('--you');g.lineWidth=1.5;g.strokeRect(X(S.sel[0])+.5,.5,X(S.sel[1])-X(S.sel[0])-1,h-1)}
+}
+function drawSong(){
+  const cv=$('#cvSong'),{g,w,h}=fitCanvas(cv);
+  g.clearRect(0,0,w,h);
+  if(songStatic)g.drawImage(songStatic,0,0,w,h);
+  if(!S.mix)return;
+  const span=V.v1-V.v0,X=t=>(t-V.v0)/span*w;
+  if(S.cursor>=V.v0&&S.cursor<=V.v1){g.fillStyle=tok('--ink');g.fillRect(X(S.cursor)-0.5,0,1,h);
+    g.beginPath();const cx=X(S.cursor);g.moveTo(cx-5,0);g.lineTo(cx+5,0);g.lineTo(cx,6);g.fill()}
+  let pos=null;
+  if(S.play){pos=S.play.from+(ac().currentTime-S.play.t0);if(pos>S.play.to+0.05){S.play=null;pos=null}}
+  if(pos!=null&&pos>=S.play.from){keepInView(pos);g.fillStyle=tok('--you');g.fillRect(X(pos)-1,0,2,h);$('#clock').textContent=fmt(pos)}
+  else $('#clock').textContent=fmt(S.cursor);
+}
+function drawMini(){
+  const cv=$('#cvMini'),{g,w,h}=fitCanvas(cv);
+  g.clearRect(0,0,w,h);if(!S.mix)return;
+  const d=songDur(),X=t=>t/d*w;
+  if(!S.mpeaks||S.mpeaks.length!==w){const sv=V.v0,se=V.v1;V.v0=0;V.v1=d;S.mpeaks=peaksFor(S.stem?S.vL:S.mix.L,S.stem?S.vR:S.mix.R,w);V.v0=sv;V.v1=se}
+  const ref=tok('--ref'),muted=tok('--muted');
+  g.fillStyle=S.stem?ref:muted;g.globalAlpha=.6;
+  for(let x=0;x<w;x++){const v=Math.min(1,S.mpeaks[x]*1.1)*(h/2-3);g.fillRect(x,h/2-v,1,v*2||1)}
+  g.globalAlpha=1;
+  g.fillStyle=ref;g.globalAlpha=.35;S.phrases.forEach(p=>g.fillRect(X(p.start),0,Math.max(1,X(p.end)-X(p.start)),h));g.globalAlpha=1;
+  // view window
+  g.fillStyle=tok('--ink');g.globalAlpha=.12;g.fillRect(X(V.v0),0,X(V.v1)-X(V.v0),h);g.globalAlpha=1;
+  g.strokeStyle=tok('--ink');g.lineWidth=1.5;g.strokeRect(X(V.v0)+.75,.75,Math.max(2,X(V.v1)-X(V.v0))-1.5,h-1.5);
+}
+/* SingStar-style stage: the original as note bars, your voice as a line that lights up on the right note */
+const STAGE={bg1:'#221F20',bg2:'#36312F',grid:'rgba(255,255,255,.07)',gridC:'rgba(253,190,16,.25)',label:'rgba(255,255,255,.5)',
+  bar:'rgba(255,255,255,.14)',barLine:'rgba(255,255,255,.6)',hit:'#FDBE10',hitGlow:'rgba(253,190,16,.7)',you:'#FF8A4C',head:'rgba(255,255,255,.9)'};
+function noteSeg(tr){
+  if(tr.notes)return tr.notes;
+  const notes=[],hop=tr.hop;let cur=null;
+  const close=()=>{if(!cur)return;const n=cur.lastF-cur.f0+1;if(n*hop>=0.08){const v=cur.vals.slice().sort((x,y)=>x-y);notes.push({t0:cur.f0*hop,t1:(cur.lastF+1)*hop,m:Math.round(v[v.length>>1])})}cur=null};
+  for(let f=0;f<tr.midi.length;f++){
+    const v=tr.midi[f];
+    if(isNaN(v)){if(cur&&f-cur.lastF>4)close();continue}
+    if(cur&&Math.abs(v-cur.mean)<0.75&&f-cur.lastF<=4){cur.vals.push(v);cur.lastF=f;cur.mean+=(v-cur.mean)/cur.vals.length}
+    else{close();cur={f0:f,lastF:f,vals:[v],mean:v}}
+  }
+  close();
+  const out=[];
+  for(const n of notes){const l=out[out.length-1];if(l&&l.m===n.m&&n.t0-l.t1<0.08)l.t1=n.t1;else out.push(n)}
+  tr.notes=out;return out;
+}
+// your pitch as [{t (phrase time), m (folded)}]
+function youPoints(ph){
+  const ref=refTrack(ph),notes=noteSeg(ref),fold=$('#oOct').checked;
+  if(S.armed&&!S.live)return null;
+  if(S.recInfo&&S.live){
+    let sh=0;const pts=[];
+    for(const p of S.live){
+      const t=p.t-S.liveLat;if(isNaN(p.m)){pts.push({t,m:NaN});continue}
+      if(fold){const n=notes.find(n=>t>=n.t0-0.25&&t<=n.t1+0.25);if(n)sh=Math.round((p.m-n.m)/12)*12}
+      pts.push({t,m:p.m-sh});
+    }
+    return pts;
+  }
+  const take=S.take&&ph.takes.includes(S.take)?S.take:null;if(!take)return null;
+  const cd=compareData(ph,take),pts=[];
+  for(let f=0;f<cd.tk.midi.length;f++)pts.push({t:f*cd.tk.hop-cd.off,m:cd.tk.midi[f]-cd.oct});
+  return pts;
+}
+const LEVELS={easy:{tol:1.0,cover:0.3,label:'Fàcil'},mid:{tol:0.6,cover:0.45,label:'Mitjà'},hard:{tol:0.35,cover:0.55,label:'Exigent'}};
+const lvl=()=>LEVELS[$('#oLevel').value]||LEVELS.easy;
+function noteHits(notes,pts){
+  if(!pts)return null;const {tol,cover}=lvl();
+  return notes.map(n=>{let tot=0,ok=0;for(const p of pts){if(p.t<n.t0-0.05||p.t>n.t1+0.05)continue;tot++;if(!isNaN(p.m)&&Math.abs(p.m-n.m)<=tol)ok++}
+    const span=Math.max(1,Math.round((n.t1-n.t0)/0.01));return tot>0&&ok/span>=cover});
+}
+function rrect(g,x,y,w,h,r){r=Math.min(r,h/2,w/2);g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function drawCompare(){
+  const cv=$('#cvCmp'),{g,w,h}=fitCanvas(cv);
+  const bg=g.createLinearGradient(0,0,0,h);bg.addColorStop(0,STAGE.bg2);bg.addColorStop(1,STAGE.bg1);g.fillStyle=bg;g.fillRect(0,0,w,h);
+  const ph=curPh();if(!ph||!S.mix)return;
+  const ref=refTrack(ph),notes=noteSeg(ref),pts=youPoints(ph),hits=noteHits(notes,pts);
+  let T=Math.max(ref.dur,0.5);
+  if(S.recInfo)T=Math.max(T,S.recInfo.len-S.liveLat);
+  else if(pts&&pts.length){for(let i=pts.length-1;i>=0;i--)if(!isNaN(pts[i].m)){T=Math.max(T,pts[i].t+0.2);break}}
+  const ms=notes.map(n=>n.m);if(!ms.length)ref.midi.forEach(v=>{if(!isNaN(v))ms.push(Math.round(v))});
+  if(pts)for(const p of pts)if(!isNaN(p.m)&&p.t>=0&&p.t<=T)ms.push(p.m);
+  ms.sort((a,b)=>a-b);
+  let lo=ms.length?Math.floor(ms[Math.floor(ms.length*.02)])-3:57,hi=ms.length?Math.ceil(ms[Math.floor(ms.length*.98)])+3:72;
+  if(notes.length){lo=Math.min(lo,Math.min(...notes.map(n=>n.m))-2);hi=Math.max(hi,Math.max(...notes.map(n=>n.m))+2)}
+  if(hi-lo<12){const c=(hi+lo)/2;lo=Math.floor(c-6);hi=Math.ceil(c+6)}
+  const padL=44,padR=14,top=12,bot=22,pH=h-top-bot,row=pH/(hi-lo);
+  const X=t=>padL+t/T*(w-padL-padR),Y=m=>top+(hi-m)*row;
+  // grid
+  g.font='10.5px '+tok('--mono');g.textBaseline='middle';
+  const dense=hi-lo>24;
+  for(let m=Math.ceil(lo)+1;m<hi;m++){
+    const pc=((m%12)+12)%12;g.fillStyle=pc===0?STAGE.gridC:STAGE.grid;g.fillRect(padL,Math.round(Y(m)),w-padL-padR,1);
+    if(NAT[pc]&&(!dense||pc===0||pc===7)){g.fillStyle=STAGE.label;g.fillText(NOTE[pc]+(Math.floor(m/12)-1),6,Y(m))}
+  }
+  const step=T>8?2:T>4?1:0.5;g.textBaseline='alphabetic';g.fillStyle=STAGE.label;
+  for(let t=0;t<=T+1e-6;t+=step)g.fillText(dec(t,step<1?1:0)+' s',X(t)-8,h-6);
+  // note bars
+  const bh=Math.max(9,Math.min(24,row*0.9));
+  notes.forEach((n,i)=>{
+    const x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2,hit=hits&&hits[i];
+    rrect(g,x0,y,Math.max(4,x1-x0),bh,bh/2);
+    if(hit){g.save();g.shadowColor=STAGE.hitGlow;g.shadowBlur=16;const gr=g.createLinearGradient(0,y,0,y+bh);gr.addColorStop(0,'#FFD966');gr.addColorStop(1,STAGE.hit);g.fillStyle=gr;g.fill();g.restore()}
+    else{g.fillStyle=STAGE.bar;g.fill();g.strokeStyle=STAGE.barLine;g.lineWidth=1.5;g.stroke()}
+  });
+  // your voice
+  if(pts){
+    g.lineCap='round';g.lineJoin='round';
+    const tol=lvl().tol,onNote=p=>notes.some(n=>p.t>=n.t0&&p.t<=n.t1&&Math.abs(p.m-n.m)<=tol);
+    for(let i=1;i<pts.length;i++){
+      const a=pts[i-1],b=pts[i];
+      if(isNaN(a.m)||isNaN(b.m)||b.t-a.t>0.08||b.t<0||a.t>T||Math.abs(b.m-a.m)>2)continue;
+      const good=onNote(a)&&onNote(b);
+      g.beginPath();g.moveTo(X(a.t),Y(a.m));g.lineTo(X(b.t),Y(b.m));
+      if(good){g.save();g.shadowColor=STAGE.hitGlow;g.shadowBlur=10;g.strokeStyle='#FFF1BF';g.lineWidth=Math.max(4,bh*0.42);g.stroke();g.restore()}
+      else{g.strokeStyle=STAGE.you;g.lineWidth=3.2;g.stroke()}
+    }
+  }
+  S.cmpGeom={padL,padR,T,w,top,pH,lo,hi,bh,notes};
+  if(S.noteHover!=null&&notes[S.noteHover]){const n=notes[S.noteHover],x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2;g.save();g.strokeStyle=STAGE.head;g.lineWidth=2;rrect(g,x0-2,y-2,Math.max(4,x1-x0)+4,bh+4,(bh+4)/2);g.stroke();g.restore()}
+  if(S.notePlay&&notes[S.notePlay.i]){const n=notes[S.notePlay.i],x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2;g.save();g.shadowColor=S.notePlay.who==='you'?STAGE.you:STAGE.hitGlow;g.shadowBlur=22;g.strokeStyle=S.notePlay.who==='you'?STAGE.you:'#FFF4C2';g.lineWidth=3;rrect(g,x0-2,y-2,Math.max(4,x1-x0)+4,bh+4,(bh+4)/2);g.stroke();g.restore()}
+  // chosen start point
+  if(S.cmpCursor!=null&&S.cmpCursor<=T){const x=X(S.cmpCursor);g.save();g.setLineDash([4,4]);g.strokeStyle=STAGE.head;g.lineWidth=1.5;g.beginPath();g.moveTo(x,top);g.lineTo(x,top+pH);g.stroke();g.restore();
+    g.fillStyle=STAGE.head;g.beginPath();g.moveTo(x-6,top+pH);g.lineTo(x+6,top+pH);g.lineTo(x,top+pH-8);g.fill()}
+  // playhead while listening, recording or playing a take
+  let th=null;
+  if(S.recInfo&&AC)th=AC.currentTime-S.recInfo.t0-S.liveLat;
+  else if(S.play&&AC){const pos=S.play.from+(AC.currentTime-S.play.t0);if(pos>=ph.start&&pos<=ph.end+0.3)th=pos-ph.start}
+  else if(S.tplay&&AC){const pos=S.tplay.from+(AC.currentTime-S.tplay.t0);if(pos>S.tplay.to+0.05)S.tplay=null;else if(pos>=S.tplay.from)th=pos}
+  if(th!=null&&th>=0&&th<=T){const x=X(th);g.fillStyle=STAGE.head;g.fillRect(x-1,top,2,pH);g.beginPath();g.moveTo(x-6,top);g.lineTo(x+6,top);g.lineTo(x,top+8);g.fill()}
+  S.lastHits=hits?{ok:hits.filter(Boolean).length,n:hits.length}:null;
+}
+// live pitch while recording (one YIN frame per incoming chunk)
+const liveBuf={d:new Float32Array(4096),n:0};
+function liveFeed(msg){
+  if(!S.recInfo||!S.live)return;
+  const d=msg.d,c=liveBuf.d;
+  if(d.length>=c.length)c.set(d.subarray(d.length-c.length));else{c.copyWithin(0,d.length);c.set(d,c.length-d.length)}
+  const sr=AC.sampleRate,ds=Math.max(1,Math.round(sr/11025)),fs=sr/ds,n=Math.floor(2048/ds),y=new Float32Array(n),o=c.length-2048;
+  for(let i=0;i<n;i++){let s=0;for(let k=0;k<ds;k++)s+=c[o+i*ds+k];y[i]=s/ds}
+  const W=Math.round(fs*0.025),tMin=Math.floor(fs/1000),tMax=Math.min(Math.ceil(fs/70),n-W-1);
+  let e=0;for(let j=0;j<W;j++)e+=y[j]*y[j];const rms=Math.sqrt(e/W);
+  S.liveMax=Math.max(S.liveMax*0.999,rms);
+  let m=NaN;
+  if(rms>Math.max(0.004,S.liveMax*0.12)){
+    const dd=new Float32Array(tMax+2);
+    for(let t=1;t<=tMax;t++){let s=0;for(let j=0;j<W;j++){const v=y[j]-y[j+t];s+=v*v}dd[t]=s}
+    let run=0;for(let t=1;t<=tMax;t++){run+=dd[t];dd[t]=run>0?dd[t]*t/run:1}
+    let best=-1;for(let t=tMin;t<=tMax;t++){if(dd[t]<0.15){while(t+1<=tMax&&dd[t+1]<dd[t])t++;best=t;break}}
+    if(best>1&&best<tMax){const a=dd[best-1],b=dd[best],cc=dd[best+1],den=a+cc-2*b;const tau=den>0?best+(a-cc)/(2*den):best;m=69+12*Math.log2(fs/tau/440)}
+  }
+  S.live.push({t:msg.t+d.length/sr-S.recInfo.t0-0.02,m});
+}
+
+/* ---------- rendering ---------- */
+function renderPhrases(){
+  $('#nPhr').textContent=S.phrases.length;
+  const gh=(S.ghosts||[]).length;$('#ghostNote').hidden=!gh;if(gh)$('#ghostNote').textContent=gh+(gh>1?' trams dubtosos':' tram dubtós')+' en gris a la forma d’ona: si és veu, clica-hi per afegir-lo.';
+  $('#plist').innerHTML=S.phrases.map((p,i)=>{
+    const best=p.takes.reduce((m,t)=>t.score!=null&&(m==null||t.score>m)?t.score:m,null);
+    return'<li class="pitem"><button type="button" class="pbtn'+(i===S.cur?' sel':'')+'" data-i="'+i+'"><span class="pnum">'+(i+1)+'</span><span class="ptime">'+fmt(p.start)+'</span>'+(p.takes.length?chipFor(best):'<span></span>')+'<span class="psub">'+dec(p.end-p.start)+' s · '+(p.takes.length?p.takes.length+(p.takes.length>1?' preses':' presa'):'sense preses')+'</span></button><button type="button" class="pdel" data-del="'+i+'" title="No és veu: treu aquesta frase">✕ treu</button></li>';
+  }).join('');
+  const sel=$('#plist .sel');if(sel)sel.scrollIntoView({block:'nearest',inline:'nearest'});
+}
+function renderDesk(){
+  const ph=curPh();
+  $('#pTitle').textContent=ph?(S.cur+1)+' de '+S.phrases.length:'Cap frase';
+  $('#pTime').textContent=ph?fmt(ph.start)+' – '+fmt(ph.end)+' · '+dec(ph.end-ph.start)+' s':'Afegeix una frase des de la forma d’ona.';
+  ['bListen','bRec','bCycle','cRef','bPrev','bNext'].forEach(id=>$('#'+id).disabled=!ph);
+  if(ph&&S.take&&!ph.takes.includes(S.take))S.take=ph.takes[ph.takes.length-1]||null;
+  if(ph&&!S.take&&ph.takes.length)S.take=ph.takes[ph.takes.length-1];
+  const take=ph&&S.take;
+  ['cYou','cAlt','cBoth','oNudge'].forEach(id=>$('#'+id).disabled=!take);
+  $('#oNudge').value=take?take.nudge:0;$('#oNudgeV').textContent=(take&&take.nudge>=0?'+':'')+dec(take?take.nudge:0,2)+' s';
+  // stats
+  let html='';
+  if(!ph)html='';
+  else if(S.armed)html='';
+  else if(!take)html='<p class="empty">Encara no t’has gravat en aquesta frase. Les barres són les notes de l’original; prem <b>Repeteix</b> o <b>Cicle</b> per afegir-hi la teva.</p>';
+  else{
+    const cd=compareData(ph,take);
+    if(cd.n<=10)html='<p class="empty">No he detectat prou veu a la presa '+take.n+' per comparar-la. Comprova el micròfon i torna-ho a provar.</p>';
+    else{
+      const m=Math.round(cd.mean),tend=m>15?'tendeixes a quedar alta':m<-15?'tendeixes a quedar baixa':'afinació centrada';
+      const nh=noteHits(noteSeg(refTrack(ph)),youPoints(ph)),ok=nh?nh.filter(Boolean).length:0,nn=nh?nh.length:0,frac=nn?ok/nn:0;
+      const good=frac>=.85;
+      let tip='';
+      if(good&&ok===nn)tip='Totes les notes al lloc.';
+      else if(m>30)tip='Vas una mica alta: canta-la una mica més greu.';
+      else if(m<-30)tip='Vas una mica baixa: canta-la una mica més aguda.';
+      else if(cd.tkSpan>cd.refSpan+0.4)tip='L’has cantada més lenta que l’original. Escolta-la un cop més i segueix la base.';
+      else if(cd.tkSpan<cd.refSpan-0.4)tip='L’has cantada més ràpida que l’original. Deixa que la base et porti.';
+      else{const miss=nh.findIndex(h=>!h);tip=miss>=0?'Fixa’t en la nota '+(miss+1)+' de '+nn+': és la primera que se t’escapa. Escolta-la i torna-hi.':'Gairebé totes! Una vegada més i ho tens.'}
+      html='<div class="verdict"><div class="stat"><span class="big" style="color:var(--'+(frac>=.75?'good':frac>=.5?'mid':'low')+')">'+ok+'<span style="font-size:.5em;color:var(--muted)"> / '+nn+'</span></span><span class="stat-l">notes encertades</span></div>'
+        +'<div class="verdict-s">'+tip+'</div></div>'
+        +'<details class="details"><summary>Detalls</summary><div class="stats">'
+        +'<div class="stat"><span class="stat-l">Temps afinat</span><b class="mono">'+Math.round(cd.inTune*100)+'%</b><span class="stat-l">a menys d’un quart de to</span></div>'
+        +'<div class="stat"><span class="stat-l">Desviació mitjana</span><b class="mono">'+(m>0?'+':'')+m+' cèntims</b><span class="stat-l">'+tend+'</span></div>'
+        +'<div class="stat"><span class="stat-l">Durada cantada</span><b class="mono">tu '+dec(cd.tkSpan)+' s · original '+dec(cd.refSpan)+' s</b><span class="stat-l">'+(Math.abs(cd.tkSpan-cd.refSpan)<0.25?'mateix tempo':cd.tkSpan>cd.refSpan?'la cantes més lenta':'la cantes més ràpida')+'</span></div>'
+        +(cd.oct?'<div class="stat"><span class="stat-l">Octava</span><b>cantes '+Math.abs(cd.oct/12)+' octava '+(cd.oct<0?'per sota':'per sobre')+'</b><span class="stat-l">comparat a la mateixa octava</span></div>':'')
+        +'</div></details>';
+    }
+  }
+  $('#stats').innerHTML=html;
+  // takes
+  $('#tlist').innerHTML=ph&&ph.takes.length?ph.takes.slice().reverse().map(t=>'<li class="take'+(t===S.take?' sel':'')+'" data-id="'+t.id+'"><button class="take-main" type="button" data-a="sel"><b>Presa '+t.n+'</b>'+chipFor(t.score)+'<small>'+dec(t.data.length/t.sr)+' s · '+(t.mode==='full'?'cançó sencera':t.mode==='guide'?'amb base i guia':t.withAcc?'amb base':'a cappella')+'</small></button><button class="sbtn" type="button" data-a="play">▶ Escolta</button><button class="sbtn" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del" aria-label="Elimina la presa '+t.n+'">Elimina</button></li>').join('')
+    :'<li class="empty">Les teves gravacions d’aquesta frase apareixeran aquí.</li>';
+  drawCompare();
+}
+function renderAll(){drawSongStatic();drawSong();drawMini();renderPhrases();renderDesk()}
+function select(i){if(i<0||i>=S.phrases.length)return;if(i!==S.cur){S.cur=i;S.take=null;S.cmpCursor=null}const p=S.phrases[i];if(p.start<V.v0||p.end>V.v1){const span=V.v1-V.v0;if(p.end-p.start<span*0.9)setView(p.start-(span-(p.end-p.start))/2,p.start-(span-(p.end-p.start))/2+span);else viewPhrase()}renderAll()}
+
+/* ---------- events ---------- */
+function rhythmChanged(redetectDownbeat){
+  if(!S.beats)return;
+  if(redetectDownbeat)S.dbShift=bestDownbeat();
+  if($('#oSnap').checked)snapPhrases();
+  renderAll();
+}
+$('#bpmHalf').addEventListener('click',()=>{if(!S.onset)return;S.period*=2;analyseRhythm(true);rhythmChanged(true)});
+$('#bpmDbl').addEventListener('click',()=>{if(!S.onset)return;S.period/=2;analyseRhythm(true);rhythmChanged(true)});
+$('#meter').addEventListener('change',()=>rhythmChanged(true));
+$('#dbNext').addEventListener('click',()=>{if(!S.beats)return;S.dbShift=(S.dbShift+1)%(+$('#meter').value);rhythmChanged(false)});
+$('#dbPrev').addEventListener('click',()=>{if(!S.beats)return;const m=+$('#meter').value;S.dbShift=(S.dbShift-1+m)%m;rhythmChanged(false)});
+$('#oSnap').addEventListener('change',()=>{if($('#oSnap').checked)snapPhrases();else S.phrases.forEach(p=>{if(p.raw){p.start=p.raw.s;p.end=p.raw.e;p.ref=null}});renderAll()});
+document.querySelectorAll('[data-mix]').forEach(b=>b.addEventListener('click',()=>{
+  const[v,a]=b.dataset.mix.split(',').map(Number);
+  $('#gVoice').value=v;$('#gAcc').value=a;$('#gVoice').dispatchEvent(new Event('input'));$('#gAcc').dispatchEvent(new Event('input'));
+  if(S.mix){const from=S.play?Math.max(S.play.from,S.play.from+(ac().currentTime-S.play.t0)):S.cursor;cancel();S.cursor=from;playSegment(from,Math.min(S.len/S.sr,from+20),S.gv,S.ga)}
+}));
+$('#plist').addEventListener('click',e=>{
+  const d=e.target.closest('.pdel');
+  if(d){const i=+d.dataset.del,p=S.phrases[i];cancel();S.phrases.splice(i,1);if(S.cur>=S.phrases.length)S.cur=S.phrases.length-1;S.take=null;renderAll();
+    toastUndo('Frase '+(i+1)+' treta.',()=>{S.phrases.splice(i,0,p);S.cur=i;renderAll()});return}
+  const b=e.target.closest('.pbtn');if(!b)return;const i=+b.dataset.i;S.cursor=S.phrases[i].start;select(i)});
+$('#tlist').addEventListener('click',e=>{
+  const li=e.target.closest('.take'),b=e.target.closest('button');if(!li||!b)return;
+  const ph=curPh(),t=ph.takes.find(x=>x.id===+li.dataset.id);if(!t)return;
+  const a=b.dataset.a;
+  if(a==='sel'){S.take=t;renderDesk()}
+  if(a==='play'){cancel();S.take=t;renderDesk();playYou(t,ph,0)}
+  if(a==='wav')download(t,ph);
+  if(a==='del'){ph.takes=ph.takes.filter(x=>x!==t);if(S.take===t)S.take=null;renderPhrases();renderDesk()}
+});
+$('#bListen').addEventListener('click',listen);
+$('#bRec').addEventListener('click',recordOnly);
+$('#bCycle').addEventListener('click',cycle);
+$('#bStop').addEventListener('click',cancel);
+$('#bPrev').addEventListener('click',()=>{cancel();select(S.cur-1)});
+$('#bNext').addEventListener('click',()=>{cancel();select(S.cur+1)});
+$('#bPlaySong').addEventListener('click',()=>{if(!S.mix)return;cancel();playSegment(S.cursor,S.len/S.sr,S.gv,S.ga)});
+$('#gVoice').addEventListener('input',e=>{S.gv=+e.target.value;$('#gVoiceV').textContent=Math.round(S.gv*100)+'%'});
+$('#gAcc').addEventListener('input',e=>{S.ga=+e.target.value;$('#gAccV').textContent=Math.round(S.ga*100)+'%'});
+$('#dGap').addEventListener('input',e=>$('#dGapV').textContent=dec(+e.target.value,2)+' s');
+$('#dCons').addEventListener('input',e=>$('#dConsV').textContent=dec(+e.target.value,1));
+$('#dSing').addEventListener('input',e=>$('#dSingV').textContent=e.target.value+' %');
+$('#dDom').addEventListener('input',e=>$('#dDomV').textContent=(+e.target.value>=0?'':'−')+Math.abs(+e.target.value)+' dB');
+$('#dMax').addEventListener('input',e=>$('#dMaxV').textContent=e.target.value+' s');
+$('#bDetect').addEventListener('click',()=>{
+  if(!S.mix||!(S.stem||S.approx))return;
+  if(S.phrases.some(p=>p.takes.length)&&!$('#bDetect').dataset.ok){$('#bDetect').dataset.ok=1;$('#bDetect').textContent='Segur? Es perdran les preses';setTimeout(()=>{delete $('#bDetect').dataset.ok;$('#bDetect').textContent='Torna a detectar'},4000);return}
+  delete $('#bDetect').dataset.ok;$('#bDetect').textContent='Torna a detectar';
+  cancel();detect();S.cur=S.phrases.length?0:-1;S.take=null;renderAll();toast(S.phrases.length+' frases detectades.');
+});
+$('#oLevel').addEventListener('change',()=>{S.phrases.forEach(p=>p.takes.forEach(t=>{t.autoOff=null;compareData(p,t)}));renderPhrases();renderDesk()});
+$('#oOct').addEventListener('change',()=>{S.phrases.forEach(p=>p.takes.forEach(t=>t.autoOff=null));renderDesk()});
+$('#oNudge').addEventListener('input',e=>{if(!S.take)return;S.take.nudge=+e.target.value;renderDesk()});
+document.querySelectorAll('[data-n]').forEach(b=>b.addEventListener('click',()=>{
+  const ph=curPh();if(!ph)return;const[k,v]=b.dataset.n.split(','),d=+v,i=S.cur;
+  const prev=S.phrases[i-1],next=S.phrases[i+1];
+  ph.raw=null;
+  if(k==='s')ph.start=Math.min(ph.end-0.3,Math.max(prev?prev.end:0,ph.start+d));
+  else ph.end=Math.max(ph.start+0.3,Math.min(next?next.start:S.len/S.sr,ph.end+d));
+  renderAll();
+}));
+$('#eSplit').addEventListener('click',()=>{
+  const ph=curPh();if(!ph)return;const c=S.cursor;
+  if(c<ph.start+0.3||c>ph.end-0.3){toast('Posa el cursor dins de la frase seleccionada (clica a la forma d’ona) i torna-ho a provar.');return}
+  const np={id:uid++,start:c,end:ph.end,raw:null,takes:[],ref:null};ph.end=c;ph.raw=null;S.phrases.splice(S.cur+1,0,np);renderAll();
+});
+$('#eMerge').addEventListener('click',()=>{
+  const ph=curPh(),nx=S.phrases[S.cur+1];if(!ph||!nx)return;
+  ph.end=nx.end;ph.raw=null;ph.takes.push(...nx.takes);S.phrases.splice(S.cur+1,1);renderAll();
+});
+$('#eDel').addEventListener('click',()=>{if(!curPh())return;cancel();S.phrases.splice(S.cur,1);S.cur=Math.min(S.cur,S.phrases.length-1);S.take=null;renderAll()});
+$('#eAdd').addEventListener('click',()=>{
+  if(!S.mix)return;const c=S.cursor;
+  if(S.phrases.some(p=>c>=p.start&&c<p.end)){toast('Ja hi ha una frase en aquest punt. Clica en una zona sense frase.');return}
+  const nx=S.phrases.find(p=>p.start>c),end=Math.min(c+2.5,nx?nx.start:S.len/S.sr);
+  if(end-c<0.3){toast('No hi ha prou espai per a una frase nova aquí.');return}
+  S.phrases.push({id:uid++,start:c,end,takes:[],ref:null});S.phrases.sort((a,b)=>a.start-b.start);
+  S.cur=S.phrases.findIndex(p=>p.start===c);S.take=null;renderAll();
+});
+
+// waveform editor: select, move cursor, drag phrase edges, drag on empty space to create a phrase, zoom and scroll
+let drag=null;
+const cvS=$('#cvSong');
+const tAt=(e,el)=>{const r=el.getBoundingClientRect();return V.v0+(e.clientX-r.left)/r.width*(V.v1-V.v0)};
+const pxOf=(t,el)=>(t-V.v0)/(V.v1-V.v0)*el.getBoundingClientRect().width;
+function hitEdge(x){for(let i=0;i<S.phrases.length;i++){const p=S.phrases[i];if(Math.abs(pxOf(p.start,cvS)-x)<7)return{i,k:'s'};if(Math.abs(pxOf(p.end,cvS)-x)<7)return{i,k:'e'}}return null}
+function snapT(t,e){if($('#oSnap').checked&&!e.altKey&&S.beats){const tol=0.12*(V.v1-V.v0)/songDur()+0.02;let bd=Math.max(0.05,Math.min(0.25,tol*4));for(const g of eighthGrid()){const d=Math.abs(g-t);if(d<bd){bd=d;t=g}}}return t}
+cvS.addEventListener('pointerdown',e=>{
+  if(!S.mix||e.button!==0)return;const r=cvS.getBoundingClientRect(),x=e.clientX-r.left,t=tAt(e,cvS);
+  const hit=hitEdge(x);
+  cvS.setPointerCapture(e.pointerId);
+  if(hit){drag=hit;if(hit.i!==S.cur){S.cur=hit.i;S.take=null}return}
+  const i=S.phrases.findIndex(p=>t>=p.start&&t<p.end);
+  const gi=i<0?(S.ghosts||[]).findIndex(gh=>t>=gh.start&&t<gh.end):-1;
+  drag={k:'maybe',x0:x,t0:t,inside:i,ghost:gi};
+});
+cvS.addEventListener('pointermove',e=>{
+  if(!S.mix)return;const r=cvS.getBoundingClientRect(),x=e.clientX-r.left;let t=tAt(e,cvS);
+  if(!drag){cvS.style.cursor=hitEdge(x)?'ew-resize':'crosshair';return}
+  if(drag.k==='maybe'){if(Math.abs(x-drag.x0)<5)return;if(drag.inside>=0)return;drag.k='new'}
+  if(drag.k==='new'){const a=snapT(Math.min(drag.t0,t),e),b=snapT(Math.max(drag.t0,t),e);
+    // keep the new phrase clear of existing ones
+    let lo=0,hi=songDur();for(const p of S.phrases){if(p.end<=drag.t0)lo=Math.max(lo,p.end);if(p.start>=drag.t0)hi=Math.min(hi,p.start)}
+    S.sel=[Math.max(lo,a),Math.min(hi,b)];drawSongStatic();drawSong();return}
+  t=snapT(t,e);
+  const p=S.phrases[drag.i],prev=S.phrases[drag.i-1],next=S.phrases[drag.i+1];
+  p.raw=null;
+  if(drag.k==='s')p.start=Math.min(p.end-0.3,Math.max(prev?prev.end:0,t));
+  else p.end=Math.max(p.start+0.3,Math.min(next?next.start:songDur(),t));
+  drawSongStatic();drawSong();
+});
+const endDrag=e=>{
+  if(!drag)return;const d=drag;drag=null;
+  if(d.k==='maybe'){const t=d.t0;S.cursor=Math.max(0,Math.min(songDur(),t));
+    if(d.ghost>=0){const gh=S.ghosts[d.ghost];S.ghosts.splice(d.ghost,1);
+      let st=gh.start,en=gh.end;for(const p of S.phrases){if(p.end<=t)st=Math.max(st,p.end);if(p.start>=t)en=Math.min(en,p.start)}
+      const np={id:uid++,start:st,end:en,raw:{s:gh.start+0.08,e:gh.end-0.18},takes:[],ref:null};S.phrases.push(np);S.phrases.sort((a,b)=>a.start-b.start);
+      if($('#oSnap').checked&&S.beats){const keep=S.phrases.filter(p=>p!==np);S.phrases=[np];snapPhrases();S.phrases=[...keep,...S.phrases].sort((a,b)=>a.start-b.start)}
+      S.cur=S.phrases.indexOf(np);S.take=null;renderAll();toast('Tram afegit com a frase '+(S.cur+1)+'.');return}
+    if(d.inside>=0&&d.inside!==S.cur){S.cur=d.inside;S.take=null;renderAll()}else drawSong();return}
+  if(d.k==='new'){const sel=S.sel;S.sel=null;
+    if(sel&&sel[1]-sel[0]>=0.3){S.phrases.push({id:uid++,start:sel[0],end:sel[1],raw:null,takes:[],ref:null});S.phrases.sort((a,b)=>a.start-b.start);
+      S.cur=S.phrases.findIndex(p=>p.start===sel[0]);S.take=null;S.cursor=sel[0];renderAll();toast('Frase '+(S.cur+1)+' creada.')}
+    else renderAll();return}
+  renderAll();
+};
+cvS.addEventListener('pointerup',endDrag);cvS.addEventListener('pointercancel',endDrag);
+cvS.addEventListener('wheel',e=>{
+  if(!S.mix)return;
+  if(e.ctrlKey||e.metaKey){e.preventDefault();zoomAt(Math.exp(e.deltaY*0.0025),tAt(e,cvS))}
+  else if(e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();const span=V.v1-V.v0,dx=(e.deltaX||e.deltaY)*span/1000;setView(V.v0+dx,V.v1+dx)}
+},{passive:false});
+cvS.addEventListener('dblclick',e=>{if(!S.mix)return;const t=tAt(e,cvS),i=S.phrases.findIndex(p=>t>=p.start&&t<p.end);if(i>=0){S.cur=i;viewPhrase()}else zoomAt(0.5,t)});
+// minimap: click or drag to move the view
+const cvM=$('#cvMini');let mdrag=null;
+cvM.addEventListener('pointerdown',e=>{if(!S.mix)return;cvM.setPointerCapture(e.pointerId);const r=cvM.getBoundingClientRect(),t=(e.clientX-r.left)/r.width*songDur(),span=V.v1-V.v0;mdrag=true;setView(t-span/2,t+span/2)});
+cvM.addEventListener('pointermove',e=>{if(!mdrag)return;const r=cvM.getBoundingClientRect(),t=(e.clientX-r.left)/r.width*songDur(),span=V.v1-V.v0;setView(t-span/2,t+span/2)});
+cvM.addEventListener('pointerup',()=>mdrag=null);cvM.addEventListener('pointercancel',()=>mdrag=null);
+$('#zIn').addEventListener('click',()=>zoomAt(0.5,curPh()&&curPh().start>=V.v0&&curPh().start<=V.v1?(curPh().start+curPh().end)/2:(V.v0+V.v1)/2));
+$('#zOut').addEventListener('click',()=>zoomAt(2,(V.v0+V.v1)/2));
+$('#zAll').addEventListener('click',()=>setView(0,songDur()));
+$('#zPh').addEventListener('click',viewPhrase);
+
+// comparison playback
+const cmpFrom=()=>S.cmpCursor||0;
+$('#cRef').addEventListener('click',()=>{const ph=curPh();if(!ph)return;cancel();playSegment(ph.start+cmpFrom(),ph.end,S.gv,S.ga)});
+// your take, with the base underneath (unless "Amb la base" is off)
+function playYou(t,ph,from){
+  const base=ac().currentTime+0.06;
+  if($('#oWithBase').checked)playSegment(ph.start+from,Math.min(S.len/S.sr,ph.end+1.2),0,S.ga,base);
+  return playTake(t,ph,from,base);
+}
+$('#cYou').addEventListener('click',()=>{const ph=curPh();if(!ph||!S.take)return;cancel();playYou(S.take,ph,cmpFrom())});
+$('#cAlt').addEventListener('click',async()=>{
+  const ph=curPh(),t=S.take;if(!ph||!t)return;cancel();const id=runId,from=cmpFrom();
+  const r=playSegment(ph.start+from,ph.end,S.gv,S.ga);
+  if(!await waitUntil(r.t+(ph.end-ph.start-from)+0.4,id))return;
+  playYou(t,ph,from);
+});
+$('#cBoth').addEventListener('click',()=>{
+  const ph=curPh(),t=S.take;if(!ph||!t)return;cancel();
+  const base=ac().currentTime+0.06,from=cmpFrom();
+  playSegment(ph.start+from,ph.end,S.gv,t.withAcc?0:S.ga,base,-0.85);
+  playTake(t,ph,from,base,0.85);
+});
+// click on the stage to choose where playback starts; double-click to clear
+const cvC=$('#cvCmp');
+function stageHit(e){
+  const gm=S.cmpGeom;if(!gm||!curPh())return null;const r=cvC.getBoundingClientRect(),x=(e.clientX-r.left)*(gm.w/r.width),y=(e.clientY-r.top)*(gm.w/r.width);
+  const t=(x-gm.padL)/(gm.w-gm.padL-gm.padR)*gm.T,row=gm.pH/(gm.hi-gm.lo);
+  let note=-1;
+  gm.notes.forEach((n,i)=>{const ny=gm.top+(gm.hi-n.m)*row;if(t>=n.t0&&t<=n.t1&&Math.abs(y-ny)<=gm.bh/2+3)note=i});
+  return{t,note};
+}
+cvC.addEventListener('pointermove',e=>{const h=stageHit(e);const i=h?h.note:-1;if(i!==S.noteHover){S.noteHover=i<0?null:i;cvC.style.cursor=i<0?'default':'pointer';if(!S.play&&!S.tplay&&!S.recInfo)drawCompare()}});
+cvC.addEventListener('pointerleave',()=>{if(S.noteHover!=null){S.noteHover=null;drawCompare()}});
+// click a note bar: hear that note from the original, then from your take; click elsewhere: choose where playback starts
+async function playNote(i){
+  const ph=curPh(),gm=S.cmpGeom;if(!ph||!gm||!gm.notes[i])return;
+  const n=gm.notes[i],pc=((n.m%12)+12)%12,name=NOTE[pc]+(Math.floor(n.m/12)-1);
+  cancel();const id=runId,c=ac();
+  // a little before and after the note, with soft edges, so nothing sounds chopped
+  const pre=0.1,post=0.35,from=Math.max(0,n.t0-pre),len=(n.t1-from)+post,t0=c.currentTime+0.05;
+  const slice=(arr,sr,start)=>{const a=Math.max(0,Math.round(start*sr)),b=Math.min(arr.length,Math.round((start+len)*sr)),o=arr.slice(a,b),f=Math.round(0.02*sr),fo=Math.round(0.12*sr);
+    for(let k=0;k<f&&k<o.length;k++)o[k]*=k/f;for(let k=0;k<fo&&k<o.length;k++)o[o.length-1-k]*=k/fo;return o};
+  S.notePlay={i,who:'ref'};
+  playChannels([slice(S.vL,S.sr,ph.start+from),slice(S.vR,S.sr,ph.start+from)],S.sr,t0);   // voice only
+  if(!await waitUntil(t0+len+0.3,id)){S.notePlay=null;return}
+  if(S.take&&ph.takes.includes(S.take)){
+    S.notePlay={i,who:'you'};
+    const cd=compareData(ph,S.take),buf=slice(S.take.data,S.take.sr,Math.max(0,from+cd.off));
+    if(buf.length>100)playChannels([buf],S.take.sr,c.currentTime+0.02,null,{reverb:verbAmt()});
+    if(!await waitUntil(c.currentTime+len+0.15,id)){S.notePlay=null;return}
+  }
+  S.notePlay=null;if(id===runId)drawCompare();
+}
+cvC.addEventListener('click',e=>{
+  const h=stageHit(e);if(!h)return;
+  if(h.note>=0){playNote(h.note);const n=S.cmpGeom.notes[h.note],pc=((n.m%12)+12)%12;toast('Nota '+(h.note+1)+' ('+NOTE[pc]+(Math.floor(n.m/12)-1)+'): primer l’original'+(S.take?', després tu.':'.'));return}
+  S.cmpCursor=(h.t<=0.03)?null:Math.max(0,Math.min(S.cmpGeom.T,h.t));cancel();drawCompare();
+});
+cvC.addEventListener('dblclick',()=>{S.cmpCursor=null;drawCompare()});
+
+function download(t,ph){saveBlob(wavBlob([t.data],t.sr),S.name+' - frase '+(S.phrases.indexOf(ph)+1)+' - presa '+t.n+'.wav')}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,select,textarea')||e.metaKey||e.ctrlKey||e.altKey)return;
+  const k=e.key;
+  if(k==='+'||k==='='){e.preventDefault();$('#zIn').click();return}
+  if(k==='-'){e.preventDefault();$('#zOut').click();return}
+  const map={' ':listen,'r':recordOnly,'R':recordOnly,'Enter':cycle,'Escape':()=>{if(fullRec)fullStop();else cancel()},'ArrowLeft':()=>{cancel();select(S.cur-1)},'ArrowRight':()=>{cancel();select(S.cur+1)}};
+  if(map[k]){e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();map[k]()}
+});
+
+// animation loop: playhead, record progress, mic meter
+(function loop(){
+  if(S.play||drag)drawSong();
+  if(S.countIn&&AC){const ci=S.countIn,now=AC.currentTime;
+    if(now>=ci.end+0.05){S.countIn=null;if(!S.recInfo&&ci.prev!=null)$('#status').innerHTML=ci.prev}
+    else{let k=-1;ci.clicks.forEach((c,i)=>{if(now>=c.t-0.02)k=i});
+      if(k!==ci.shown&&k>=0){if(ci.prev==null)ci.prev=$('#status').innerHTML;ci.shown=k;const cur=ci.clicks[k].n;let h='<span class="count">';for(let n=1;n<=ci.meter;n++)h+='<i class="'+(n===cur?'on':'')+(n===1?' one':'')+'">'+n+'</i>';$('#status').innerHTML=h+'</span>'}}}
+  if(fullRec)fullTick();
+  if(S.recInfo||S.play||S.tplay||S.notePlay)drawCompare();
+  else if(S.wasLive){drawCompare()}
+  S.wasLive=!!(S.recInfo||S.play||S.tplay||S.notePlay);
+  if(S.recInfo&&AC){const el=$('#recBar'),tt=$('#recT'),p=(AC.currentTime-S.recInfo.t0);if(el)el.style.width=Math.min(100,p/S.recInfo.len*100)+'%';if(tt)tt.textContent=dec(Math.max(0,p))}
+  if(mic){rec.peak*=0.96;const db=20*Math.log10(rec.peak+1e-6),v=Math.max(0,Math.min(1,(db+50)/50));const m=$('#meterI');m.style.width=v*100+'%';m.style.background=v>.93?'var(--rec)':'var(--good)'}
+  requestAnimationFrame(loop);
+})();
+let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{S.peaks=null;S.vpeaks=null;S.mpeaks=null;drawSongStatic();drawSong();drawMini();drawCompare()},60)}).observe(document.body);
+
+// open with the example loaded so the tool shows what it does
+renderStart();
+</script>
+</body>
+</html>
