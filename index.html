@@ -22,6 +22,13 @@
   color-scheme:light;
 }
 *{box-sizing:border-box}
+body.simple .adv-only{display:none!important}
+body:not(.simple) .simple-only{display:none!important}
+body.simple .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.simple .step b{font-size:24px}
+body.simple .pbtn{padding:10px 8px}
+body.simple .wave-wrap{border-radius:8px;height:110px}
+.help-s{font-size:13px;color:var(--muted);margin:8px 0 0}
 [hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-inline:16px;padding-block:68px 40px}
@@ -229,6 +236,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   <header class="topbar">
     <a class="brand" href="https://rockin.cat" target="_blank" rel="noopener"><img src="https://rockin.cat/wp-content/uploads/2022/07/rockin-logo.svg" alt="Rockin" onerror="this.outerHTML='&lt;b style=&quot;font-family:Lora,serif;font-size:30px;letter-spacing:.02em&quot;&gt;ROCKIN&lt;/b&gt;'"><span>Mirall de veu</span></a>
     <div class="loaders">
+      <button class="btn ghost" id="bMode" type="button" title="Mode senzill: només el que cal per escoltar, cantar i veure el resultat">Mode complet</button>
       <button class="btn ghost" id="bExport" type="button" title="Desa la cançó, la veu separada, les frases i les preses en un fitxer .mirall" hidden>Desa la sessió</button>
       <label class="btn" for="fMix">Carrega una cançó</label>
       <input type="file" id="fMix" accept="audio/*" class="vh">
@@ -237,8 +245,8 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
 
   <section class="panel start" id="startPanel" aria-label="Comença">
     <div class="eyebrow">Pas 1</div>
-    <h1 class="start-t">Carrega una cançó</h1>
-    <p class="start-s">Un MP3, WAV o M4A de la cançó que vols treballar. Després separarem la veu i la dividirem en frases per cantar-les una a una.</p>
+    <h1 class="start-t">Tria una cançó</h1>
+    <p class="start-s">Un fitxer d’àudio (MP3, WAV o M4A) de la cançó que vols cantar. El programa en separarà la veu i la dividirà en frases per cantar-les una a una.</p>
     <label class="btn start-btn" for="fMix">Tria un fitxer d’àudio</label>
     <button class="sbtn" id="bResume" type="button" hidden></button>
     <label class="sbtn" for="fSess">Obre una sessió desada (.mirall)</label>
@@ -254,7 +262,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
         <p class="meta mono" id="songMeta"></p>
       </div>
       <div class="group" role="group" aria-label="Què sona" id="mixPresets">
-        <button class="sbtn" type="button" data-mix="1,1">▶ Cançó</button><button class="sbtn" type="button" data-mix="1,0">▶ Només veu</button><button class="sbtn" type="button" data-mix="0,1">▶ Només base</button>
+        <button class="sbtn" type="button" data-mix="1,1">▶ Cançó</button><button class="sbtn adv-only" type="button" data-mix="1,0">▶ Només veu</button><button class="sbtn adv-only" type="button" data-mix="0,1">▶ Només base</button>
         <button class="sbtn" id="bStop" type="button">■ Atura <kbd>Esc</kbd></button>
         <span class="clock mono" id="clock">0:00.0</span>
       </div>
@@ -268,17 +276,17 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </div>
       <div class="sep-actions">
         <button class="btn" id="bSep" type="button">Separa la veu amb IA</button>
-        <label class="sbtn" for="fStem" id="lStem">Ja tinc la pista de veu separada…</label>
+        <label class="sbtn adv-only" for="fStem" id="lStem">Ja tinc la pista de veu separada…</label>
         <input type="file" id="fStem" accept="audio/*" class="vh">
-        <button class="sbtn" id="bApprox" type="button">Treballa sense separar (aproximat)</button>
-        <div class="group" id="sepDl" hidden>
+        <button class="sbtn adv-only" id="bApprox" type="button">Treballa sense separar (aproximat)</button>
+        <div class="group adv-only" id="sepDl" hidden>
           <button class="sbtn" id="dlVoc" type="button">Descarrega la veu (WAV)</button>
           <button class="sbtn" id="dlInst" type="button">Descarrega la base (WAV)</button>
         </div>
       </div>
     </div>
     <p class="note" id="sepNote" hidden></p>
-    <div class="full-row" id="fullRow">
+    <div class="full-row adv-only" id="fullRow">
       <span class="eyebrow">Cançó sencera</span>
       <button class="sbtn rec-btn" id="bFull" type="button">● Canta-la tota des del cursor</button>
       <button class="sbtn" id="bFullStop" type="button" hidden>■ Atura i desa</button>
@@ -286,7 +294,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       <span class="stat-l" id="fullInfo">Et grava de seguit amb la base. Atura quan vulguis (Esc): les frases que hagis cantat queden amb la seva presa.</span>
       <ul class="tlist full-list" id="fullList" hidden></ul>
     </div>
-    <div class="edit-bar">
+    <div class="edit-bar adv-only">
       <div class="group">
         <button class="sbtn" id="zOut" type="button" title="Allunya (−)">−</button>
         <button class="sbtn" id="zIn" type="button" title="Apropa (+)">+</button>
@@ -295,9 +303,9 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </div>
       <span class="stat-l" id="editHint">Arrossega sobre un espai buit per crear una frase · arrossega les vores per ajustar-la · roda del ratolí amb Ctrl/⌘ per fer zoom, amb Maj per desplaçar</span>
     </div>
-    <div class="mini-wrap"><canvas id="cvMini" aria-label="Vista general de la cançó"></canvas></div>
+    <div class="mini-wrap adv-only"><canvas id="cvMini" aria-label="Vista general de la cançó"></canvas></div>
     <div class="wave-wrap"><canvas id="cvSong" aria-label="Forma d'ona de la veu amb les frases marcades"></canvas></div>
-    <div class="song-tools">
+    <div class="song-tools adv-only">
       <button class="sbtn" id="bPlaySong" type="button">▶ Des del cursor</button>
       <span class="stat-l" id="rhythmV"></span>
       <details class="adv">
@@ -343,7 +351,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     <aside class="panel phrases" aria-label="Frases">
       <h2>Frases <span class="mono stat-l" id="nPhr"></span></h2>
       <ol class="plist" id="plist"></ol>
-      <p class="empty" id="ghostNote" hidden></p>
+      <p class="empty adv-only" id="ghostNote" hidden></p>
     </aside>
 
     <div class="desk">
@@ -355,23 +363,23 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
             <p class="meta mono" id="pTime"></p>
             <p class="pline"><input id="pLyr" type="text" placeholder="Títol de la frase (per exemple, la lletra)" aria-label="Títol de la frase"></p>
           </div>
-          <div class="nudges">
+          <div class="nudges adv-only">
             <div class="group"><button class="sbtn" id="bPrev" type="button" aria-label="Frase anterior">←</button><button class="sbtn" id="bNext" type="button" aria-label="Frase següent">→</button></div>
             <div class="group">Inici <button class="sbtn" data-n="s,-0.1" type="button">−</button><button class="sbtn" data-n="s,0.1" type="button">+</button></div>
             <div class="group">Final <button class="sbtn" data-n="e,-0.1" type="button">−</button><button class="sbtn" data-n="e,0.1" type="button">+</button></div>
           </div>
         </div>
         <div class="steps">
-          <button class="step listen" id="bListen" type="button"><span class="k">Espai</span><b>Escolta</b><small>la frase original, amb la veu guia</small></button>
-          <button class="step rec" id="bRec" type="button"><span class="k">R</span><b>Repeteix</b><small>canta-la sobre la base; t’enregistro i ho comparo</small></button>
-          <button class="step cyc" id="bCycle" type="button"><span class="k">Intro</span><b>Cicle</b><small>escolta → entra la base → cantes → compara</small></button>
+          <button class="step listen" id="bListen" type="button"><span class="k">Espai</span><b>Escolta</b><small class="adv-only">la frase original, amb la veu guia</small><small class="simple-only">la frase tal com sona a la cançó</small></button>
+          <button class="step rec adv-only" id="bRec" type="button"><span class="k">R</span><b>Repeteix</b><small>canta-la sobre la base; t’enregistro i ho comparo</small></button>
+          <button class="step cyc" id="bCycle" type="button"><span class="k">Intro</span><b class="adv-only">Cicle</b><b class="simple-only">Canta-la</b><small class="adv-only">escolta → entra la base → cantes → compara</small><small class="simple-only">la sents un cop i, quan entri la música, la cantes</small></button>
         </div>
         <div class="opts">
-          <label for="oTimes">Escoltes al cicle <select id="oTimes"><option selected>1</option><option>2</option><option>3</option></select></label>
-          <label for="oBack">Mentre cantes sona <select id="oBack"><option value="guide" selected>la base + veu guia fluixa</option><option value="base">la base (sense veu)</option><option value="none">res (a cappella)</option></select></label>
+          <label for="oTimes" class="adv-only">Escoltes al cicle <select id="oTimes"><option selected>1</option><option>2</option><option>3</option></select></label>
+          <label for="oBack" class="adv-only">Mentre cantes sona <select id="oBack"><option value="guide" selected>la base + veu guia fluixa</option><option value="base">la base (sense veu)</option><option value="none">res (a cappella)</option></select></label>
           <label for="oRate">Velocitat <select id="oRate"><option value="1" selected>normal</option><option value="0.85">85 %</option><option value="0.7">70 %</option><option value="0.55">55 %</option></select></label>
-          <label for="oPre">Entrada <select id="oPre"><option value="0">entra directament</option><option value="1" selected>1 compàs d’entrada</option><option value="2">2 compassos d’entrada</option></select></label>
-          <span class="meter"><button class="sbtn" id="bMic" type="button">Prova el micròfon</button><span class="meter-bar"><i id="meterI"></i></span></span>
+          <label for="oPre" class="adv-only">Entrada <select id="oPre"><option value="0">entra directament</option><option value="1" selected>1 compàs d’entrada</option><option value="2">2 compassos d’entrada</option></select></label>
+          <span class="meter adv-only"><button class="sbtn" id="bMic" type="button">Prova el micròfon</button><span class="meter-bar"><i id="meterI"></i></span></span>
         </div>
         <div class="status" id="status" aria-live="polite"></div>
       </div>
@@ -379,7 +387,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       <div class="panel">
         <div class="cmp-head">
           <h3>Comparació</h3>
-          <label class="level" for="oLevel">Nivell <select id="oLevel"><option value="easy" selected>Fàcil</option><option value="mid">Mitjà</option><option value="hard">Exigent</option></select></label>
+          <label class="level adv-only" for="oLevel">Nivell <select id="oLevel"><option value="easy" selected>Fàcil</option><option value="mid">Mitjà</option><option value="hard">Exigent</option></select></label>
           <div class="legend"><span><i class="r"></i>Notes de l’original</span><span><i class="y"></i>Tu</span><span><i class="h"></i>Encertat</span></div>
         </div>
         <div class="cv-wrap"><canvas id="cvCmp" aria-label="Notes de l'original en barres i la teva veu a sobre"></canvas></div>
@@ -388,15 +396,15 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
           <div class="group">
             <button class="sbtn" id="cRef" type="button">▶ Original</button>
             <button class="sbtn" id="cYou" type="button">▶ Tu</button>
-            <button class="sbtn" id="cAlt" type="button">▶ Alterna</button>
-            <button class="sbtn" id="cBoth" type="button" title="Original a l'esquerra, tu a la dreta">▶ Juntes (E/D)</button>
+            <button class="sbtn adv-only" id="cAlt" type="button">▶ Alterna</button>
+            <button class="sbtn adv-only" id="cBoth" type="button" title="Original a l'esquerra, tu a la dreta">▶ Juntes (E/D)</button>
           </div>
-          <div class="mixer2">
+          <div class="mixer2 adv-only">
             <label class="fader y" for="gYou"><span>La teva veu <b class="mono" id="gYouV">100%</b></span><input type="range" id="gYou" min="0" max="2" step="0.05" value="1"></label>
             <label class="fader a" for="gBase"><span>Base <b class="mono" id="gBaseV">80%</b></span><input type="range" id="gBase" min="0" max="1.5" step="0.05" value="0.8"></label>
           </div>
-          <label for="oVerb">Reverb a la teva veu <select id="oVerb"><option value="0">cap</option><option value="0.22" selected>una mica</option><option value="0.45">sala gran</option></select></label>
-          <details class="adv inline"><summary>Ajustos</summary><div class="adv-body"><div class="adv-row">
+          <label for="oVerb" class="adv-only">Reverb a la teva veu <select id="oVerb"><option value="0">cap</option><option value="0.22" selected>una mica</option><option value="0.45">sala gran</option></select></label>
+          <details class="adv inline adv-only"><summary>Ajustos</summary><div class="adv-body"><div class="adv-row">
           <label for="oOct"><input type="checkbox" id="oOct" checked> Ignora l'octava</label>
           <label for="oNudge">Alineació <input type="range" id="oNudge" min="-0.6" max="0.6" step="0.01" value="0"> <span class="mono" id="oNudgeV">0,00 s</span></label>
           </div></div></details>
@@ -406,11 +414,16 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       <div class="panel">
         <h3 style="font-size:16px">Preses d'aquesta frase</h3>
         <ul class="tlist" id="tlist"></ul>
+      <p class="help-s simple-only">Cada vegada que cantes la frase es guarda aquí. Clica’n una per veure-la i escoltar-la.</p>
       </div>
     </div>
   </section>
 
-  <section class="panel help">
+  <section class="panel help simple-only">
+    <h3>Com funciona</h3>
+    <p><b>1.</b> Tria una cançó. <b>2.</b> Espera que el programa en separi la veu. <b>3.</b> Tria una frase, prem <b>Escolta</b> per sentir-la i <b>Canta-la</b> per cantar-la amb la música. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
+  </section>
+  <section class="panel help adv-only">
     <h3>Com funciona</h3>
     <p><b>1. Carrega una cançó</b> (MP3, WAV, M4A). <b>2. Separa la veu</b>: el programa fa servir Demucs, un model obert, dins del teu navegador; la cançó no surt del teu ordinador. <b>3. Treballa frase a frase</b>: les frases i la melodia es treuen només de la pista de veu. Escolta la frase, repeteix-la cantant sobre la base i mira quines notes has encertat.</p>
     <p><b>Velocitat.</b> Pots escoltar i cantar la frase més lenta (85, 70 o 55 %) sense que canviï el to; la comparació ho té en compte. La cançó sencera sempre va a velocitat normal.</p>
@@ -1342,7 +1355,7 @@ function drawSongStatic(){
     if(b-a>14)g.fillText(String(i+1),a+5,26);
   });
   // doubtful stretches
-  (S.ghosts||[]).forEach(gh=>{
+  if(!document.body.classList.contains('simple'))(S.ghosts||[]).forEach(gh=>{
     if(gh.end<V.v0||gh.start>V.v1)return;
     const a=X(gh.start),b=X(gh.end);
     g.save();g.setLineDash([5,4]);g.strokeStyle=muted;g.lineWidth=1.5;g.strokeRect(a+1,1,b-a-2,h-2);g.restore();
@@ -1458,7 +1471,7 @@ function drawCompare(){
   const dense=hi-lo>24;
   for(let m=Math.ceil(lo)+1;m<hi;m++){
     const pc=((m%12)+12)%12;g.fillStyle=pc===0?STAGE.gridC:STAGE.grid;g.fillRect(padL,Math.round(Y(m)),w-padL-padR,1);
-    if(NAT[pc]&&(!dense||pc===0||pc===7)){g.fillStyle=STAGE.label;g.fillText(NOTE[pc]+(Math.floor(m/12)-1),6,Y(m))}
+    if(NAT[pc]&&(!dense||pc===0||pc===7)&&!document.body.classList.contains('simple')){g.fillStyle=STAGE.label;g.fillText(NOTE[pc]+(Math.floor(m/12)-1),6,Y(m))}
   }
   const step=T>8?2:T>4?1:0.5;g.textBaseline='alphabetic';g.fillStyle=STAGE.label;
   for(let t=0;t<=T+1e-6;t+=step)g.fillText(dec(t,step<1?1:0)+' s',X(t)-8,h-6);
@@ -1526,7 +1539,7 @@ function renderPhrases(){
   const gh=(S.ghosts||[]).length;$('#ghostNote').hidden=!gh;if(gh)$('#ghostNote').textContent=gh+(gh>1?' trams dubtosos':' tram dubtós')+' en gris a la forma d’ona: si és veu, clica-hi per afegir-lo.';
   $('#plist').innerHTML=S.phrases.map((p,i)=>{
     const best=p.takes.reduce((m,t)=>t.score!=null&&(m==null||t.score>m)?t.score:m,null);
-    return'<li class="pitem"><button type="button" class="pbtn'+(i===S.cur?' sel':'')+'" data-i="'+i+'"><span class="pnum">'+(i+1)+'</span><span class="ptime">'+fmt(p.start)+'</span>'+(p.takes.length?chipFor(best):'<span></span>')+'<span class="psub">'+dec(p.end-p.start)+' s · '+(p.takes.length?p.takes.length+(p.takes.length>1?' preses':' presa'):'sense preses')+'</span>'+(p.lyr?'<span class="plyr" title="'+p.lyr.replace(/"/g,'&quot;')+'">'+p.lyr.replace(/</g,'&lt;')+'</span>':'')+'</button><button type="button" class="pdel" data-del="'+i+'" title="No és veu: treu aquesta frase">✕ treu</button></li>';
+    return'<li class="pitem"><button type="button" class="pbtn'+(i===S.cur?' sel':'')+'" data-i="'+i+'"><span class="pnum">'+(i+1)+'</span><span class="ptime">'+fmt(p.start)+'</span>'+(p.takes.length?chipFor(best):'<span></span>')+'<span class="psub">'+dec(p.end-p.start)+' s · '+(p.takes.length?p.takes.length+(p.takes.length>1?' preses':' presa'):'sense preses')+'</span>'+(p.lyr?'<span class="plyr" title="'+p.lyr.replace(/"/g,'&quot;')+'">'+p.lyr.replace(/</g,'&lt;')+'</span>':'')+'</button><button type="button" class="pdel adv-only" data-del="'+i+'" title="No és veu: treu aquesta frase">✕ treu</button></li>';
   }).join('');
   const sel=$('#plist .sel');if(sel)sel.scrollIntoView({block:'nearest',inline:'nearest'});
 }
@@ -1562,7 +1575,7 @@ function renderDesk(){
       else{const miss=nh.findIndex(h=>!h);tip=miss>=0?'Fixa’t en la nota '+(miss+1)+' de '+nn+': és la primera que se t’escapa. Escolta-la i torna-hi.':'Gairebé totes! Una vegada més i ho tens.'}
       html='<div class="verdict"><div class="stat"><span class="big" style="color:var(--'+(frac>=.75?'good':frac>=.5?'mid':'low')+')">'+ok+'<span style="font-size:.5em;color:var(--muted)"> / '+nn+'</span></span><span class="stat-l">notes encertades</span></div>'
         +'<div class="verdict-s">'+tip+'</div></div>'
-        +'<details class="details"><summary>Detalls</summary><div class="stats">'
+        +'<details class="details adv-only"><summary>Detalls</summary><div class="stats">'
         +'<div class="stat"><span class="stat-l">Temps afinat</span><b class="mono">'+Math.round(cd.inTune*100)+'%</b><span class="stat-l">a menys d’un quart de to</span></div>'
         +'<div class="stat"><span class="stat-l">Desviació mitjana</span><b class="mono">'+(m>0?'+':'')+m+' cèntims</b><span class="stat-l">'+tend+'</span></div>'
         +'<div class="stat"><span class="stat-l">Durada cantada</span><b class="mono">tu '+dec(cd.tkSpan)+' s · original '+dec(cd.refSpan)+' s</b><span class="stat-l">'+(Math.abs(cd.tkSpan-cd.refSpan)<Math.max(0.4,cd.refSpan*0.15)?'mateix tempo':cd.tkSpan>cd.refSpan?'una mica més lenta':'una mica més ràpida')+'</span></div>'
@@ -1572,7 +1585,7 @@ function renderDesk(){
   }
   $('#stats').innerHTML=html;
   // takes
-  $('#tlist').innerHTML=ph&&ph.takes.length?ph.takes.slice().reverse().map(t=>'<li class="take'+(t===S.take?' sel':'')+'" data-id="'+t.id+'"><button class="take-main" type="button" data-a="sel"><b>Presa '+t.n+'</b>'+chipFor(t.score)+'<small>'+dec(t.data.length/t.sr)+' s · '+(t.mode==='full'?'de la sencera':t.mode==='guide'?'amb base i guia':t.withAcc?'amb base':'a cappella')+(t.rate&&t.rate<1?' · a '+Math.round(t.rate*100)+' %':'')+'</small></button><button class="sbtn" type="button" data-a="play">▶ Escolta</button><button class="sbtn" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del" aria-label="Elimina la presa '+t.n+'">Elimina</button></li>').join('')
+  $('#tlist').innerHTML=ph&&ph.takes.length?ph.takes.slice().reverse().map(t=>'<li class="take'+(t===S.take?' sel':'')+'" data-id="'+t.id+'"><button class="take-main" type="button" data-a="sel"><b>Presa '+t.n+'</b>'+chipFor(t.score)+'<small>'+dec(t.data.length/t.sr)+' s · '+(t.mode==='full'?'de la sencera':t.mode==='guide'?'amb base i guia':t.withAcc?'amb base':'a cappella')+(t.rate&&t.rate<1?' · a '+Math.round(t.rate*100)+' %':'')+'</small></button><button class="sbtn" type="button" data-a="play">▶ Escolta</button><button class="sbtn adv-only" type="button" data-a="wav">WAV</button><button class="sbtn" type="button" data-a="del" aria-label="Elimina la presa '+t.n+'">Elimina</button></li>').join('')
     :'<li class="empty">Les teves gravacions d’aquesta frase apareixeran aquí.</li>';
   drawCompare();
 }
@@ -1680,17 +1693,17 @@ function hitEdge(x){for(let i=0;i<S.phrases.length;i++){const p=S.phrases[i];if(
 function snapT(t,e){if($('#oSnap').checked&&!e.altKey&&S.beats){const tol=0.12*(V.v1-V.v0)/songDur()+0.02;let bd=Math.max(0.05,Math.min(0.25,tol*4));for(const g of eighthGrid()){const d=Math.abs(g-t);if(d<bd){bd=d;t=g}}}return t}
 cvS.addEventListener('pointerdown',e=>{
   if(!S.mix||e.button!==0)return;const r=cvS.getBoundingClientRect(),x=e.clientX-r.left,t=tAt(e,cvS);
-  const hit=hitEdge(x);
+  const simple=document.body.classList.contains('simple'),hit=simple?null:hitEdge(x);
   cvS.setPointerCapture(e.pointerId);
   if(hit){drag=hit;if(hit.i!==S.cur){S.cur=hit.i;S.take=null}return}
   const i=S.phrases.findIndex(p=>t>=p.start&&t<p.end);
-  const gi=i<0?(S.ghosts||[]).findIndex(gh=>t>=gh.start&&t<gh.end):-1;
+  const gi=(i<0&&!simple)?(S.ghosts||[]).findIndex(gh=>t>=gh.start&&t<gh.end):-1;
   drag={k:'maybe',x0:x,t0:t,inside:i,ghost:gi};
 });
 cvS.addEventListener('pointermove',e=>{
   if(!S.mix)return;const r=cvS.getBoundingClientRect(),x=e.clientX-r.left;let t=tAt(e,cvS);
-  if(!drag){cvS.style.cursor=hitEdge(x)?'ew-resize':'crosshair';return}
-  if(drag.k==='maybe'){if(Math.abs(x-drag.x0)<5)return;if(drag.inside>=0)return;drag.k='new'}
+  if(!drag){cvS.style.cursor=!document.body.classList.contains('simple')&&hitEdge(x)?'ew-resize':'pointer';return}
+  if(drag.k==='maybe'){if(Math.abs(x-drag.x0)<5)return;if(drag.inside>=0||document.body.classList.contains('simple'))return;drag.k='new'}
   if(drag.k==='new'){const a=snapT(Math.min(drag.t0,t),e),b=snapT(Math.max(drag.t0,t),e);
     // keep the new phrase clear of existing ones
     let lo=0,hi=songDur();for(const p of S.phrases){if(p.end<=drag.t0)lo=Math.max(lo,p.end);if(p.start>=drag.t0)hi=Math.min(hi,p.start)}
@@ -1825,6 +1838,9 @@ document.addEventListener('keydown',e=>{
 let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{S.peaks=null;S.vpeaks=null;S.mpeaks=null;drawSongStatic();drawSong();drawMini();drawCompare()},60)}).observe(document.body);
 
 // open with the example loaded so the tool shows what it does
+function setMode(simple){document.body.classList.toggle('simple',simple);$('#bMode').textContent=simple?'Mode complet':'Mode senzill';try{localStorage.setItem('mirall-mode',simple?'simple':'full')}catch(e){}if(S.mix){renderAll();drawCompare()}}
+$('#bMode').addEventListener('click',()=>setMode(!document.body.classList.contains('simple')));
+(()=>{let m='simple';try{m=localStorage.getItem('mirall-mode')||'simple'}catch(e){}setMode(m==='simple')})();
 renderStart();offerResume();
 window.addEventListener('beforeunload',e=>{if(S.mix&&!S.demo){e.preventDefault();e.returnValue=''}});
 </script>
