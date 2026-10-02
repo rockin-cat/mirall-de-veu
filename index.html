@@ -231,7 +231,8 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     <h1 class="start-t">Carrega una cançó</h1>
     <p class="start-s">Un MP3, WAV o M4A de la cançó que vols treballar. Després separarem la veu i la dividirem en frases per cantar-les una a una.</p>
     <label class="btn start-btn" for="fMix">Tria un fitxer d’àudio</label>
-    <p class="start-s small">O arrossega el fitxer aquí.</p>
+    <button class="sbtn" id="bResume" type="button" hidden></button>
+    <p class="start-s small">O arrossega el fitxer aquí. La feina es desa en aquest navegador: si tanques la pàgina sense voler, la podràs recuperar.</p>
   </section>
 
   <section class="panel" id="songPanel" aria-label="Cançó" hidden>
@@ -666,6 +667,62 @@ function entryFor(ph){
   return{from:Math.max(0,ph.start-2*N),clicks:[]};
 }
 
+/* ---------- session store (IndexedDB): song file, separated voice, phrases and takes survive a reload ---------- */
+const DB_NAME='mirall-de-veu',DB_STORE='sessions';
+function idb(){return new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error('noidb'));const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(DB_STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbGet(k){try{const d=await idb();return await new Promise((res,rej)=>{const t=d.transaction(DB_STORE).objectStore(DB_STORE).get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error)})}catch(e){return null}}
+async function idbSet(k,v){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction(DB_STORE,'readwrite');t.objectStore(DB_STORE).put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)});return true}catch(e){console.warn('save',e);return false}}
+async function idbDel(k){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction(DB_STORE,'readwrite');t.objectStore(DB_STORE).delete(k);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){}}
+const toI16=a=>{const o=new Int16Array(a.length);for(let i=0;i<a.length;i++){const v=Math.max(-1,Math.min(1,a[i]));o[i]=v<0?v*0x8000:v*0x7fff}return o};
+const fromI16=a=>{const o=new Float32Array(a.length);for(let i=0;i<a.length;i++)o[i]=a[i]/0x8000;return o};
+let saveT=null,saving=false;
+function saveSoon(){if(!S.mix||S.demo||!S.file)return;clearTimeout(saveT);saveT=setTimeout(saveSession,1500)}
+async function saveSession(){
+  if(!S.mix||S.demo||!S.file||saving)return;saving=true;
+  try{
+    const takeOut=t=>({n:t.n,data:toI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,lat:t.lat,nudge:t.nudge,full:t.full||null});
+    const sess={v:1,savedAt:Date.now(),name:S.name,file:S.file,fileName:S.file.name,
+      stem:S.stem?{L:toI16(S.stem.L),R:S.stem.L===S.stem.R?null:toI16(S.stem.R)}:null,sepBy:S.sepBy,approx:!!S.approx,
+      period:S.period||null,dbShift:S.dbShift||0,meter:$('#meter').value,
+      phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,takes:p.takes.map(takeOut)})),
+      ghosts:S.ghosts||[],
+      fullTakes:(S.fullTakes||[]).map(f=>({n:f.n,data:toI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,id:f.id})),
+      opts:{back:$('#oBack').value,pre:$('#oPre').value,level:$('#oLevel').value,verb:$('#oVerb').value,times:$('#oTimes').value}};
+    await idbSet('last',sess);
+  }catch(e){console.warn(e)}finally{saving=false}
+}
+async function offerResume(){
+  const sess=await idbGet('last');const b=$('#bResume');
+  if(!sess||!sess.file){b.hidden=true;return}
+  const ago=Math.round((Date.now()-sess.savedAt)/60000),when=ago<1?'ara mateix':ago<60?'fa '+ago+' min':ago<1440?'fa '+Math.round(ago/60)+' h':'fa '+Math.round(ago/1440)+' dies';
+  const nTakes=sess.phrases.reduce((a,p)=>a+p.takes.length,0);
+  b.textContent='Recupera la sessió anterior: «'+sess.name+'» ('+sess.phrases.length+(sess.phrases.length===1?' frase, ':' frases, ')+nTakes+(nTakes===1?' presa, ':' preses, ')+when+')';
+  b.hidden=false;b.onclick=()=>resumeSession(sess);
+}
+async function resumeSession(sess){
+  const b=$('#bResume');b.disabled=true;b.textContent='Recuperant «'+sess.name+'»…';
+  try{
+    const buf=await sess.file.arrayBuffer(),dec=await ac().decodeAudioData(buf);
+    cancel();S.mix=toLR(dec);S.file=sess.file;S.name=sess.name;S.demo=false;S.approx=sess.approx;S.sepInfo=null;
+    if(sess.stem){const L=fromI16(sess.stem.L),R=sess.stem.R?fromI16(sess.stem.R):L;S.stem={L,R,sr:44100};S.sepBy=sess.sepBy||'ai'}else{S.stem=null;S.sepBy=null}
+    S.inst=null;
+    renderStart();
+    // rebuild analysis, then put the saved phrases back
+    S.phrases=[];loadSong(false);
+    if(sess.period&&S.onset){S.period=sess.period;$('#meter').value=sess.meter||'4';analyseRhythm(true);S.dbShift=sess.dbShift||0}
+    S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
+    S.ghosts=sess.ghosts||[];
+    S.fullTakes=(sess.fullTakes||[]).map(f=>({id:f.id||uid++,n:f.n,data:fromI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,phr:[]}));
+    S.fullTake=S.fullTakes[S.fullTakes.length-1]||null;$('#bFullPlay').hidden=!S.fullTake;
+    if(sess.opts){$('#oBack').value=sess.opts.back;$('#oPre').value=sess.opts.pre;$('#oLevel').value=sess.opts.level;$('#oVerb').value=sess.opts.verb;$('#oTimes').value=sess.opts.times}
+    for(const p of S.phrases)for(const t of p.takes){t.track=pitchTrack(t.data,t.sr);compareData(p,t)}
+    S.cur=S.phrases.length?0:-1;S.take=null;
+    $('#work').hidden=!(S.stem||S.approx);$('#fullRow').hidden=!(S.stem||S.approx);
+    renderAll();renderSep();renderFullTakes();
+    toast('Sessió recuperada: '+S.phrases.length+' frases.');
+  }catch(e){console.error(e);b.disabled=false;b.textContent='No he pogut recuperar la sessió anterior ('+errMsg(e)+').'}
+}
+
 /* ---------- start screen and drag & drop ---------- */
 function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;if(!has)$('#work').hidden=true}
 async function loadMixFile(f){
@@ -675,7 +732,7 @@ async function loadMixFile(f){
   try{b=await ac().decodeAudioData(await f.arrayBuffer())}
   catch(err){setStatus('');$('#startPanel').querySelector('.start-s').textContent='No he pogut llegir «'+f.name+'» ('+errMsg(err)+'). Prova amb un altre format (MP3, WAV, M4A) o amb Chrome.';toast('No he pogut llegir aquest fitxer d’àudio.');return}
   try{
-    cancel();S.mix=toLR(b);S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;S.fullTakes=[];$('#bFullPlay').hidden=true;$('#fullList').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
+    cancel();S.mix=toLR(b);S.file=f;S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;S.fullTakes=[];$('#bFullPlay').hidden=true;$('#fullList').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
   }catch(err){console.error(err);setStatus('');toast('He llegit la cançó però ha fallat l’anàlisi: '+errMsg(err));return}
   // separate straight away; the step-2 panel shows progress and the alternatives
   if(IS_FILE&&IS_SAFARI)toast('Cançó carregada. Safari no pot separar la veu des d’un fitxer del disc: obre l’eina amb Chrome o des de la web.');
@@ -869,7 +926,7 @@ async function separateVoice(){
     // the base is the song minus the separated voice (does not depend on how the other stems are returned)
     S.stem={L:res.vocals.left,R:res.vocals.right,sr:44100};S.inst=null;S.sepBy='ai';
     // re-detect phrases on the voice; keep any takes by moving them to the new phrase they overlap most
-    const old=S.phrases;S.approx=false;sepBusy=false;cancel();loadSong(false);
+    const old=S.phrases;S.approx=false;sepBusy=false;cancel();loadSong(false);saveSoon();
     for(const op of old)for(const t of op.takes){
       let best=null,bo=0;for(const np of S.phrases){const o=Math.min(op.end,np.end)-Math.max(op.start,np.start);if(o>bo){bo=o;best=np}}
       if(best){t.autoOff=null;best.takes.push(t)}
@@ -1033,7 +1090,7 @@ async function doRecord(ph,id){
   const take={id:uid++,n,data,sr,withAcc,mode,lat:withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0,nudge:0,track:null,score:null};
   setPhase(null,'Analitzant…');await sleep(20);
   take.track=pitchTrack(take.data,take.sr);
-  ph.takes.push(take);S.take=take;
+  ph.takes.push(take);S.take=take;saveSoon();
   const cd=compareData(ph,take);
   setPhase(null,cd&&cd.n>10?'Presa '+n+' desada. Mira la comparació.':'Presa '+n+' desada, però gairebé no hi he detectat veu. Comprova el nivell del micròfon.');
   renderPhrases();renderDesk();
@@ -1087,7 +1144,7 @@ async function fullStop(){
   }
   const first=S.phrases.findIndex(p=>p.takes.some(t=>t.full===full.id));
   if(first>=0){S.cur=first;S.take=S.phrases[first].takes.find(t=>t.full===full.id)}else S.take=null;
-  renderAll();renderFullTakes();
+  renderAll();renderFullTakes();saveSoon();
   $('#bFullPlay').hidden=false;
   const scored=S.phrases.filter(p=>p.takes.length&&p.takes[p.takes.length-1].score!=null),avg=scored.length?Math.round(scored.reduce((a,p)=>a+p.takes[p.takes.length-1].score,0)/scored.length):null;
   $('#fullInfo').textContent='Desat: '+made+(made===1?' frase':' frases')+' amb presa.'+(avg!=null?' Mitjana de notes encertades: '+avg+' %.':'')+' Clica una frase per veure-la nota a nota.';
@@ -1428,7 +1485,7 @@ function renderDesk(){
     :'<li class="empty">Les teves gravacions d’aquesta frase apareixeran aquí.</li>';
   drawCompare();
 }
-function renderAll(){drawSongStatic();drawSong();drawMini();renderPhrases();renderDesk()}
+function renderAll(){drawSongStatic();drawSong();drawMini();renderPhrases();renderDesk();saveSoon()}
 function select(i){if(i<0||i>=S.phrases.length)return;if(i!==S.cur){S.cur=i;S.take=null;S.cmpCursor=null}const p=S.phrases[i];if(p.start<V.v0||p.end>V.v1){const span=V.v1-V.v0;if(p.end-p.start<span*0.9)setView(p.start-(span-(p.end-p.start))/2,p.start-(span-(p.end-p.start))/2+span);else viewPhrase()}renderAll()}
 
 /* ---------- events ---------- */
@@ -1483,6 +1540,7 @@ $('#bDetect').addEventListener('click',()=>{
   delete $('#bDetect').dataset.ok;$('#bDetect').textContent='Torna a detectar';
   cancel();detect();S.cur=S.phrases.length?0:-1;S.take=null;renderAll();toast(S.phrases.length+' frases detectades.');
 });
+['oBack','oPre','oVerb','oTimes','meter'].forEach(id=>$('#'+id).addEventListener('change',saveSoon));
 $('#oLevel').addEventListener('change',()=>{S.phrases.forEach(p=>p.takes.forEach(t=>{t.autoOff=null;compareData(p,t)}));renderPhrases();renderDesk()});
 $('#oOct').addEventListener('change',()=>{S.phrases.forEach(p=>p.takes.forEach(t=>t.autoOff=null));renderDesk()});
 $('#oNudge').addEventListener('input',e=>{if(!S.take)return;S.take.nudge=+e.target.value;renderDesk()});
@@ -1665,7 +1723,8 @@ document.addEventListener('keydown',e=>{
 let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{S.peaks=null;S.vpeaks=null;S.mpeaks=null;drawSongStatic();drawSong();drawMini();drawCompare()},60)}).observe(document.body);
 
 // open with the example loaded so the tool shows what it does
-renderStart();
+renderStart();offerResume();
+window.addEventListener('beforeunload',e=>{if(S.mix&&!S.demo){e.preventDefault();e.returnValue=''}});
 </script>
 </body>
 </html>
