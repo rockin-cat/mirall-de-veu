@@ -790,12 +790,68 @@ async function resumeSession(sess){
 
 /* ---------- start screen and drag & drop ---------- */
 function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;$('#bExport').hidden=!has||S.demo;if(!has)$('#work').hidden=true}
+/* ---------- robust audio decoding: sniff the real container, strip tags, skip junk, and fall back to a WASM MP3 decoder ---------- */
+function sniffAudio(u8){
+  const s4=String.fromCharCode(...u8.subarray(0,4)),s8=String.fromCharCode(...u8.subarray(4,12));
+  if(s4==='RIFF')return 'wav';
+  if(s4==='fLaC')return 'flac';
+  if(s4==='OggS')return 'ogg';
+  if(s4==='FORM')return 'aiff';
+  if(u8[0]===0x1A&&u8[1]===0x45&&u8[2]===0xDF&&u8[3]===0xA3)return 'webm';
+  if(s8.startsWith('ftyp'))return 'm4a';
+  if(s4.startsWith('ID3'))return 'mp3';
+  if(u8[0]===0xFF&&(u8[1]&0xE6)>=0xE2&&(u8[1]&0xE0)===0xE0)return 'mp3';
+  if(u8[0]===0xFF&&(u8[1]&0xF6)===0xF0)return 'aac';
+  if(s4.startsWith('fLa')||s4.startsWith('MAC '))return 'other';
+  return 'unknown';
+}
+function stripMp3Tags(u8){
+  let a=0,b=u8.length;
+  if(u8[0]===0x49&&u8[1]===0x44&&u8[2]===0x33){const sz=((u8[6]&0x7f)<<21)|((u8[7]&0x7f)<<14)|((u8[8]&0x7f)<<7)|(u8[9]&0x7f);a=10+sz+((u8[5]&0x10)?10:0)}
+  if(b-128>a&&u8[b-128]===0x54&&u8[b-127]===0x41&&u8[b-126]===0x47)b-=128;            // ID3v1 "TAG"
+  if(b-32>a&&String.fromCharCode(...u8.subarray(b-32,b-24))==='APETAGEX'){const sz=u8[b-20]|(u8[b-19]<<8)|(u8[b-18]<<16)|(u8[b-17]<<24);b-=sz+32}
+  // skip anything before the first plausible MPEG frame sync
+  for(let i=a;i<Math.min(b-4,a+2e6);i++){if(u8[i]===0xFF&&(u8[i+1]&0xE0)===0xE0&&(u8[i+1]&0x18)!==0x08&&(u8[i+1]&0x06)!==0&&(u8[i+2]&0xF0)!==0xF0&&(u8[i+2]&0x0C)!==0x0C){a=i;break}}
+  return u8.subarray(a,b);
+}
+let mpgLib=null;
+async function decodeMp3Wasm(u8,onProgress){
+  if(!mpgLib){await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/mpg123-decoder@1.0.3/dist/mpg123-decoder.min.js';sc.onload=res;sc.onerror=()=>rej(new Error('no s’ha pogut carregar el descodificador MP3'));document.head.appendChild(sc)});mpgLib=window['mpg123-decoder']}
+  const dec=new mpgLib.MPEGDecoder();await dec.ready;
+  try{
+    const chunk=1<<20,parts=[];let sr=44100,ch=1,total=0;
+    for(let o=0;o<u8.length;o+=chunk){const r=dec.decode(u8.subarray(o,Math.min(u8.length,o+chunk)));if(r.samplesDecoded){parts.push(r.channelData.map(c=>c.slice()));total+=r.samplesDecoded;sr=r.sampleRate;ch=r.channelData.length}if(onProgress)onProgress(o/u8.length);await sleep(0)}
+    const fl=dec.flush?dec.flush():null;if(fl&&fl.samplesDecoded){parts.push(fl.channelData.map(c=>c.slice()));total+=fl.samplesDecoded}
+    if(!total)throw new Error('cap mostra descodificada');
+    const buf=ac().createBuffer(ch,total,sr);
+    for(let c=0;c<ch;c++){const d=buf.getChannelData(c);let o=0;for(const p of parts){d.set(p[Math.min(c,p.length-1)],o);o+=p[0].length}}
+    return buf;
+  }finally{try{dec.free()}catch(e){}}
+}
+const FORMAT_NAMES={wav:'WAV',flac:'FLAC',ogg:'Ogg (Vorbis/Opus)',aiff:'AIFF',webm:'WebM/Opus',m4a:'MP4/M4A (AAC)',mp3:'MP3',aac:'AAC',other:'un format poc habitual',unknown:'un format que no reconec'};
+async function decodeAny(f,status){
+  const buf=await f.arrayBuffer(),u8=new Uint8Array(buf),kind=sniffAudio(u8);
+  const tryDecode=async ab=>{try{return await ac().decodeAudioData(ab)}catch(e){return null}};
+  let b=await tryDecode(buf.slice(0));
+  if(!b&&kind==='mp3'){const st=stripMp3Tags(u8);if(st.length<u8.length){status('Netejant etiquetes de l’MP3…');b=await tryDecode(st.slice().buffer)}}
+  if(!b&&kind==='mp3'){status('Descodificant l’MP3 amb el motor alternatiu…');try{b=await decodeMp3Wasm(stripMp3Tags(u8),p=>status('Descodificant l’MP3 amb el motor alternatiu… '+Math.round(p*100)+' %'))}catch(e){console.warn(e)}}
+  if(!b){
+    const name=FORMAT_NAMES[kind]||kind,ext=(f.name.match(/\.([^.]+)$/)||[])[1];
+    let why='El fitxer és '+name+(ext&&kind!=='unknown'&&!f.name.toLowerCase().endsWith('.'+kind)&&!(kind==='m4a'&&/^(m4a|mp4|aac)$/i.test(ext))?' encara que es digui .'+ext:'')+'.';
+    if(kind==='webm'||kind==='ogg')why+=IS_SAFARI?' Safari no sap llegir aquest format: obre l’eina amb Chrome o converteix la cançó a MP3.':' Prova de convertir-la a MP3 o WAV.';
+    else if(kind==='unknown')why+=' Pot ser que el fitxer estigui tallat o no sigui àudio. Prova de tornar-lo a descarregar o de convertir-lo a MP3 o WAV.';
+    else why+=' El navegador no l’ha pogut descodificar: prova de convertir-la a MP3 o WAV'+(IS_SAFARI?', o d’obrir l’eina amb Chrome':'')+'.';
+    throw new Error(why);
+  }
+  return b;
+}
 async function loadMixFile(f){
   if(!f)return;
-  setStatus('Llegint '+f.name+'…');$('#startPanel').querySelector('.start-s').textContent='Llegint '+f.name+'…';
+  const status=t=>{setStatus(t);$('#startPanel').querySelector('.start-s').textContent=t};
+  status('Llegint '+f.name+'…');
   let b;
-  try{b=await ac().decodeAudioData(await f.arrayBuffer())}
-  catch(err){setStatus('');$('#startPanel').querySelector('.start-s').textContent='No he pogut llegir «'+f.name+'» ('+errMsg(err)+'). Prova amb un altre format (MP3, WAV, M4A) o amb Chrome.';toast('No he pogut llegir aquest fitxer d’àudio.');return}
+  try{b=await decodeAny(f,status)}
+  catch(err){setStatus('');$('#startPanel').querySelector('.start-s').textContent='No he pogut llegir «'+f.name+'». '+errMsg(err);toast('No he pogut llegir aquest fitxer d’àudio.');return}
   try{
     cancel();S.mix=toLR(b);S.file=f;S.stem=null;S.inst=null;S.sepBy=null;S.sepInfo=null;S.approx=false;S.demo=false;S.fullTake=null;S.fullTakes=[];S.semis=0;S.pvL=S.pvR=S.piL=S.piR=null;$('#oKey').value='0';stretchCache.clear();$('#bFullPlay').hidden=true;$('#fullList').hidden=true;S.name=f.name.replace(/\.[^.]+$/,'');setStatus('');renderStart();loadSong(false);
   }catch(err){console.error(err);setStatus('');toast('He llegit la cançó però ha fallat l’anàlisi: '+errMsg(err));return}
