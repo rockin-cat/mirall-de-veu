@@ -6,6 +6,7 @@
 <title>Mirall de veu · Rockin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="coi.js"></script>
 <link rel="icon" href="https://rockin.cat/wp-content/uploads/2022/07/cropped-rockin-favicon-32x32.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Ubuntu:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
@@ -234,7 +235,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
 <body>
 <div class="wrap">
   <header class="topbar">
-    <a class="brand" href="https://rockin.cat" target="_blank" rel="noopener"><img src="https://rockin.cat/wp-content/uploads/2022/07/rockin-logo.svg" alt="Rockin" onerror="this.outerHTML='&lt;b style=&quot;font-family:Lora,serif;font-size:30px;letter-spacing:.02em&quot;&gt;ROCKIN&lt;/b&gt;'"><span>Mirall de veu</span></a>
+    <a class="brand" href="https://rockin.cat" target="_blank" rel="noopener"><img src="rockin-logo.svg" alt="Rockin" onerror="this.outerHTML='&lt;b style=&quot;font-family:Lora,serif;font-size:30px;letter-spacing:.02em&quot;&gt;ROCKIN&lt;/b&gt;'"><span>Mirall de veu</span></a>
     <div class="loaders">
       <button class="btn ghost" id="bMode" type="button" title="Mode senzill: només el que cal per escoltar, cantar i veure el resultat">Mode complet</button>
       <button class="btn ghost" id="bExport" type="button" title="Desa la cançó, la veu separada, les frases i les preses en un fitxer .mirall" hidden>Desa la sessió</button>
@@ -1030,8 +1031,11 @@ async function separateVoice(){
       modelUrl=(sepLib.CONSTANTS&&sepLib.CONSTANTS.DEFAULT_MODEL_URL)||MODEL_FALLBACK;
       sepBuf=await fetchModel(modelUrl,(l,t,hit)=>sepUI(hit?'Model ja descarregat.':'Descarregant el model… '+Math.round(l/1e6)+' de '+Math.round(t/1e6)+' MB',hit?1:l/t));
       let gpu=false;try{gpu=!!(navigator.gpu&&await navigator.gpu.requestAdapter())}catch(e){}
+      const nth=self.crossOriginIsolated?(navigator.hardwareConcurrency||4):1;
       if(gpu){sepBackend='la targeta gràfica';try{sepProc=await makeProc(['webgpu'])}catch(e){console.warn('webgpu',e);sepProc=null}}
-      if(!sepProc){sepBackend='el processador (més lent)';sepProc=await makeProc(['wasm'])}
+      if(!sepProc){sepBackend='el processador ('+nth+(nth===1?' fil, lent':' fils')+')';
+        try{sepProc=await makeProc(['wasm'])}
+        catch(e){if(nth>1){console.warn('wasm multifil',e);sepOrt.env.wasm.numThreads=1;sepBackend='el processador (1 fil, lent)';sepProc=await makeProc(['wasm'])}else throw e}}
     }
     S.sepT0=performance.now();
     sepUI('Separant la veu amb '+sepBackend+'… 0%',0);
@@ -1039,7 +1043,7 @@ async function separateVoice(){
     let ck=checkStem(res.vocals.left);
     if((ck.bad||ck.rms<1e-5)&&sepBackend==='la targeta gràfica'){
       // some GPUs return empty/NaN output: retry on the CPU
-      sepBackend='el processador (més lent)';sepProc=await makeProc(['wasm']);S.sepT0=performance.now();
+      sepBackend='el processador ('+(self.crossOriginIsolated?(navigator.hardwareConcurrency||4):1)+' fils)';sepProc=await makeProc(['wasm']);S.sepT0=performance.now();
       res=await sepProc.separate(mixRef.L,mixRef.R);ck=checkStem(res.vocals.left);
     }
     if(ck.bad||ck.rms<1e-5)throw new Error('la pista de veu ha sortit buida');
