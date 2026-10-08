@@ -333,6 +333,11 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
             <span class="stat-l">Temps 1</span><button class="sbtn" id="dbPrev" type="button" aria-label="Mou el temps 1 un temps enrere">←</button><button class="sbtn" id="dbNext" type="button" aria-label="Mou el temps 1 un temps endavant">→</button>
             <label for="oSnap" class="stat-l"><input type="checkbox" id="oSnap" checked> Ajusta les frases als temps</label>
           </div>
+          <div class="adv-row" aria-label="Motor de separació">
+            <span class="adv-l">Separació</span>
+            <label for="oEngine">Motor <select id="oEngine"><option value="auto" selected>automàtic (prova i tria el més ràpid)</option><option value="gpu">targeta gràfica</option><option value="cpu">processador</option></select></label>
+            <span class="stat-l" id="engineInfo"></span>
+          </div>
           <div class="adv-row detect-body" aria-label="Detecció de frases">
             <span class="adv-l">Detecció</span>
             <label for="dSens">Sensibilitat <input type="range" id="dSens" min="-40" max="-8" step="1" value="-22"></label>
@@ -1015,27 +1020,38 @@ async function makeProc(providers){
   await proc.loadModel(sepBuf.slice(0));
   return proc;
 }
+$('#oEngine').addEventListener('change',()=>{try{localStorage.setItem('mirall-engine',$('#oEngine').value)}catch(e){}sepProc=null});
+try{const e=localStorage.getItem('mirall-engine');if(e)$('#oEngine').value=e}catch(e){}
+async function gpuName(){try{const a=navigator.gpu&&await navigator.gpu.requestAdapter();if(!a)return null;const i=a.info||(a.requestAdapterInfo?await a.requestAdapterInfo():{});return (i.description||i.device||i.architecture||i.vendor||'GPU')}catch(e){return null}}
+async function benchProc(proc,L,R){const n=Math.min(L.length,Math.round(44100*8));const t=performance.now();await proc.separate(L.subarray(0,n),R.subarray(0,n));return (performance.now()-t)/1000}
 async function separateVoice(){
   if(sepBusy||!S.mix||S.demo)return;
   sepBusy=true;renderSep();sepUI('Començant…',0);
   const mixRef=S.mix;
   try{
     if(!sepProc){
-      sepUI('Carregant el motor de separació…',0);
       const withTimeout=(pr,ms,what)=>Promise.race([pr,new Promise((_,rej)=>setTimeout(()=>rej(new Error(what)),ms))]);
-      sepOrt=await withTimeout(import(ORT_URL+'ort.all.mjs'),45000,'no s’ha pogut carregar el motor (ONNX Runtime) des d’internet');
-      sepOrt.env.wasm.wasmPaths=ORT_URL;
+      if(!sepOrt){sepUI('Carregant el motor de separació…',0);
+        sepOrt=await withTimeout(import(ORT_URL+'ort.all.mjs'),45000,'no s’ha pogut carregar el motor (ONNX Runtime) des d’internet');
+        sepOrt.env.wasm.wasmPaths=ORT_URL;
+        if(sepOrt.env.webgpu)sepOrt.env.webgpu.powerPreference='high-performance'}
       sepOrt.env.wasm.numThreads=self.crossOriginIsolated?(navigator.hardwareConcurrency||4):1;
-      if(sepOrt.env.webgpu)sepOrt.env.webgpu.powerPreference='high-performance';
-      sepLib=await withTimeout(import(DEMUCS_URL),45000,'no s’ha pogut carregar la llibreria Demucs des d’internet');
-      modelUrl=(sepLib.CONSTANTS&&sepLib.CONSTANTS.DEFAULT_MODEL_URL)||MODEL_FALLBACK;
-      sepBuf=await fetchModel(modelUrl,(l,t,hit)=>sepUI(hit?'Model ja descarregat.':'Descarregant el model… '+Math.round(l/1e6)+' de '+Math.round(t/1e6)+' MB',hit?1:l/t));
-      let gpu=false;try{gpu=!!(navigator.gpu&&await navigator.gpu.requestAdapter())}catch(e){}
-      const nth=self.crossOriginIsolated?(navigator.hardwareConcurrency||4):1;
-      if(gpu){sepBackend='la targeta gràfica';try{sepProc=await makeProc(['webgpu'])}catch(e){console.warn('webgpu',e);sepProc=null}}
-      if(!sepProc){sepBackend='el processador ('+nth+(nth===1?' fil, lent':' fils')+')';
-        try{sepProc=await makeProc(['wasm'])}
-        catch(e){if(nth>1){console.warn('wasm multifil',e);sepOrt.env.wasm.numThreads=1;sepBackend='el processador (1 fil, lent)';sepProc=await makeProc(['wasm'])}else throw e}}
+      if(!sepLib){sepLib=await withTimeout(import(DEMUCS_URL),45000,'no s’ha pogut carregar la llibreria Demucs des d’internet');modelUrl=(sepLib.CONSTANTS&&sepLib.CONSTANTS.DEFAULT_MODEL_URL)||MODEL_FALLBACK}
+      if(!sepBuf)sepBuf=await fetchModel(modelUrl,(l,t,hit)=>sepUI(hit?'Model ja descarregat.':'Descarregant el model… '+Math.round(l/1e6)+' de '+Math.round(t/1e6)+' MB',hit?1:l/t));
+      const gname=await gpuName(),gpu=!!gname,nth=self.crossOriginIsolated?(navigator.hardwareConcurrency||4):1,want=$('#oEngine').value;
+      const cpuLabel=()=>'el processador ('+sepOrt.env.wasm.numThreads+(sepOrt.env.wasm.numThreads===1?' fil, lent':' fils')+')';
+      const makeCpu=async()=>{try{return await makeProc(['wasm'])}catch(e){if(sepOrt.env.wasm.numThreads>1){console.warn('wasm multifil',e);sepOrt.env.wasm.numThreads=1;return await makeProc(['wasm'])}throw e}};
+      let gpuProc=null,cpuProc=null,tg=null,tc=null;
+      if(gpu&&want!=='cpu'){sepBackend='la targeta gràfica';try{gpuProc=await makeProc(['webgpu'])}catch(e){console.warn('webgpu',e);gpuProc=null}}
+      if(want==='auto'&&gpuProc){
+        // time one 8-second chunk on each engine and keep the faster one: some GPUs run this model slower than the CPU
+        sepUI('Provant la targeta gràfica…',1);tg=await benchProc(gpuProc,mixRef.L,mixRef.R);
+        if(tg>3){sepUI('Provant el processador…',1);sepBackend='';cpuProc=await makeCpu();sepBackend=cpuLabel();tc=await benchProc(cpuProc,mixRef.L,mixRef.R)}
+      }
+      if(gpuProc&&(tc==null||tg<=tc)){sepProc=gpuProc;sepBackend='la targeta gràfica'}
+      else{if(!cpuProc)cpuProc=await makeCpu();sepProc=cpuProc;sepBackend=cpuLabel()}
+      S.sepDiag='Motor: '+sepBackend+(gname?' · GPU: '+gname:' · sense WebGPU')+' · fils: '+sepOrt.env.wasm.numThreads+' · aïllat: '+(self.crossOriginIsolated?'sí':'no')+(tg!=null?' · prova GPU '+tg.toFixed(1)+' s':'')+(tc!=null?' · prova CPU '+tc.toFixed(1)+' s':'')+' · '+navigator.userAgent.replace(/^.*\) /,'').slice(0,60);
+      $('#engineInfo').textContent=S.sepDiag;console.log(S.sepDiag);
     }
     S.sepT0=performance.now();
     sepUI('Separant la veu amb '+sepBackend+'… 0%',0);
@@ -1057,7 +1073,7 @@ async function separateVoice(){
       let best=null,bo=0;for(const np of S.phrases){const o=Math.min(op.end,np.end)-Math.max(op.start,np.start);if(o>bo){bo=o;best=np}}
       if(best){t.autoOff=null;best.takes.push(t)}
     }
-    S.sepInfo='Veu separada en '+mmss(performance.now()-S.sepT0)+' amb '+sepBackend+'. '+S.phrases.length+' frases detectades a la pista de veu'+((S.ghosts||[]).length?' i '+S.ghosts.length+' trams dubtosos en gris':'')+'.';
+    S.sepInfo='Veu separada en '+mmss(performance.now()-S.sepT0)+' amb '+sepBackend+'. '+S.phrases.length+' frases detectades a la pista de veu'+((S.ghosts||[]).length?' i '+S.ghosts.length+' trams dubtosos en gris':'')+'. ('+(S.sepDiag||'')+')';
     renderAll();renderSep();
     toast('Veu separada. '+S.phrases.length+' frases detectades a la veu.');
   }catch(err){
