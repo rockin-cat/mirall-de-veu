@@ -342,10 +342,10 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
             <span class="adv-l">Detecció</span>
             <label for="dSens">Sensibilitat <input type="range" id="dSens" min="-40" max="-8" step="1" value="-22"></label>
             <label for="dDom" id="lDom">Veu per sobre de la base <span class="mono" id="dDomV">−18 dB</span><input type="range" id="dDom" min="-30" max="0" step="1" value="-18"></label>
-            <label for="dSing">Mínim de cant per frase <span class="mono" id="dSingV">25 %</span><input type="range" id="dSing" min="10" max="80" step="5" value="25"></label>
-            <label for="dCons" id="lCons">Consonants mínimes per segon <span class="mono" id="dConsV">0,3</span><input type="range" id="dCons" min="0" max="2" step="0.1" value="0.3"></label>
+            <label for="dSing">Mínim de cant per frase <span class="mono" id="dSingV">15 %</span><input type="range" id="dSing" min="5" max="80" step="5" value="15"></label>
+            <label for="dCons" id="lCons">Consonants mínimes per segon <span class="mono" id="dConsV">0,0</span><input type="range" id="dCons" min="0" max="2" step="0.1" value="0"></label>
             <label for="dGap">Silenci entre frases <span class="mono" id="dGapV">0,35 s</span><input type="range" id="dGap" min="0.1" max="1.2" step="0.05" value="0.35"></label>
-            <label for="dMax">Durada màxima <span class="mono" id="dMaxV">10 s</span><input type="range" id="dMax" min="3" max="20" step="1" value="10"></label>
+            <label for="dMax">Durada màxima <span class="mono" id="dMaxV">7 s</span><input type="range" id="dMax" min="3" max="20" step="1" value="7"></label>
             <button class="sbtn" id="bDetect" type="button">Torna a detectar</button>
           </div>
         </div>
@@ -500,9 +500,18 @@ function pitchTrack(x,sr){
     for(let t=tMin;t<=tMax;t++){if(d[t]<0.15){while(t+1<=tMax&&d[t+1]<d[t])t++;best=t;break}}
     if(best<0){let m=1,mi=-1;for(let t=tMin;t<=tMax;t++)if(d[t]<m){m=d[t];mi=t}if(m<0.3)best=mi}
     if(best<0)continue;
+    // octave check: if the best lag sits an octave away from the recent pitch and a lag at the octave is also a good dip, keep the continuous one
+    const toMidi=t=>69+12*Math.log2(fs/t/440);
+    let prev=NaN,cnt=0;for(let k=f-1;k>=Math.max(0,f-8)&&cnt<3;k--){if(!isNaN(midi[k])){prev=isNaN(prev)?midi[k]:(prev+midi[k])/2;cnt++}}
+    if(!isNaN(prev)&&Math.abs(toMidi(best)-prev)>7){
+      const alts=[Math.round(best/2),best*2].filter(t=>t>=tMin&&t<=tMax&&d[t]<0.35);
+      let bt=best,bd=Math.abs(toMidi(best)-prev);
+      for(let t of alts){let u=t;while(u-1>tMin&&d[u-1]<d[u])u--;while(u+1<tMax&&d[u+1]<d[u])u++;const dd=Math.abs(toMidi(u)-prev);if(dd<bd-3){bd=dd;bt=u}}
+      best=bt;
+    }
     let tau=best;
     if(best>1&&best<tMax){const a=d[best-1],b=d[best],c=d[best+1],den=a+c-2*b;if(den>0)tau=best+(a-c)/(2*den)}
-    midi[f]=69+12*Math.log2(fs/tau/440);
+    midi[f]=toMidi(tau);
   }
   // median-of-5 smoothing over voiced neighbours, drop isolated frames
   const out=new Float32Array(F).fill(NaN);
@@ -511,6 +520,20 @@ function pitchTrack(x,sr){
     const w=[];for(let k=-2;k<=2;k++){const v=midi[f+k];if(v!==undefined&&!isNaN(v))w.push(v)}
     if(w.length<2)continue;
     w.sort((a,b)=>a-b);out[f]=w[w.length>>1];
+  }
+  // drop short voiced runs (< 60 ms) that jump more than 7 semitones away from both neighbours: octave slips, clicks, breath noise
+  let f=0;
+  while(f<F){
+    if(isNaN(out[f])){f++;continue}
+    let g=f;while(g<F&&!isNaN(out[g]))g++;
+    if((g-f)*hop/fs<0.06){
+      let pv=NaN,nv=NaN;for(let k=f-1;k>=Math.max(0,f-30);k--)if(!isNaN(out[k])){pv=out[k];break}
+      for(let k=g;k<Math.min(F,g+30);k++)if(!isNaN(out[k])){nv=out[k];break}
+      const mid=out[f+((g-f)>>1)];
+      const far=(isNaN(pv)||Math.abs(mid-pv)>7)&&(isNaN(nv)||Math.abs(mid-nv)>7);
+      if(far&&!(isNaN(pv)&&isNaN(nv)))for(let k=f;k<g;k++)out[k]=NaN;
+    }
+    f=g;
   }
   return{midi:out,rms,hop:hop/fs,dur:F*hop/fs,mx};
 }
@@ -583,23 +606,37 @@ function detect(){
   if(st>=0)segs.push([st*hop,env.length*hop]);
   const merged=[];
   for(const s of segs){const l=merged[merged.length-1];if(l&&s[0]-l[1]<gap)l[1]=s[1];else merged.push(s.slice())}
+  // a second pass joins neighbours separated by a short breath, as long as the result is still a short phrase
+  for(let i=0;i<merged.length-1;){const a=merged[i],b=merged[i+1];if(b[0]-a[1]<0.8&&b[1]-a[0]<=maxLen*0.85){a[1]=b[1];merged.splice(i+1,1)}else i++}
   // keep only segments where sung (stable-pitch) frames fill enough of the time: drops hits, risers and noises
   const minCons=+$('#dCons').value,ghosts=[];
   let ph=merged.filter(s=>{
     if(s[1]-s[0]<0.3)return false;
     const a=Math.floor(s[0]/hop),b=Math.ceil(s[1]/hop);let st=0,cn=0;for(let f=a;f<b;f++){st+=S.stable[f]||0;cn+=S.cons[f]||0}
-    const len=(b-a)*hop,sung=st*hop>=0.3&&st/(b-a)>=minSing,cons=!S.stem||cn/len>=minCons||cn>=3;
+    const len=(b-a)*hop,sung=st*hop>=0.25&&st/(b-a)>=minSing,cons=!S.stem||minCons<=0||cn/len>=minCons||cn>=3;
     if(sung&&cons)return true;
     // kept aside as a doubtful stretch: shown in grey, one click turns it into a phrase
     ghosts.push({start:Math.max(0,s[0]-0.08),end:Math.min(dur,s[1]+0.18),why:!sung?'poques notes cantades':'sense consonants (instrument?)'});
     return false;
   });
   S.ghosts=ghosts;
+  // long stretches are cut where the singer breathes: an unvoiced gap or a clear energy dip, preferably near the middle
   const split=s=>{
     const len=s[1]-s[0];if(len<=maxLen)return[s];
-    const a=Math.floor((s[0]+len*.25)/hop),b=Math.floor((s[1]-len*.25)/hop);let mi=a,mv=Infinity;
-    for(let f=a;f<b;f++){let v=0;for(let k=-5;k<=5;k++)v+=env[f+k]||0;if(v<mv){mv=v;mi=f}}
-    return[...split([s[0],mi*hop]),...split([mi*hop,s[1]])];
+    const a=Math.floor((s[0]+Math.max(1.5,len*.25))/hop),b=Math.floor((s[1]-Math.max(1.5,len*.25))/hop);
+    if(b-a<10)return[s];
+    const sm=f=>{let v=0,c=0;for(let k=-4;k<=4;k++){const e=env[f+k];if(e!==undefined){v+=e;c++}}return v/c};
+    let best=-1,bs=-Infinity;
+    for(let f=a;f<b;f++){
+      let gap=0;for(let k=f-8;k<=f+8;k++)if(S.voiced[k]===0)gap++;           // unvoiced frames around f (breath)
+      let lmax=-Infinity;for(let k=f-50;k<=f+50;k+=2){const e=env[k];if(e!==undefined&&e>lmax)lmax=e}
+      const depth=lmax-sm(f);                                                  // dB below the local maximum
+      const centred=1-Math.abs((f-(a+b)/2)/((b-a)/2));                        // 1 at the middle, 0 at the edges
+      const score=depth*0.5+(gap>=6?8:gap>=3?3:0)+centred*4;
+      if(score>bs){bs=score;best=f}
+    }
+    if(best<0)return[s];
+    return[...split([s[0],best*hop]),...split([best*hop,s[1]])];
   };
   ph=ph.flatMap(split);
   for(let i=0;i<ph.length;i++){ph[i][0]=Math.max(0,ph[i][0]-0.08);ph[i][1]=Math.min(dur,ph[i][1]+0.18)}
@@ -612,6 +649,8 @@ function refTrack(ph){
   if(ph.ref&&ph.ref.key===key)return ph.ref.tr;
   const a=Math.round(ph.start*S.sr),b=Math.round(ph.end*S.sr);
   const tr=pitchTrack(S.det.subarray(a,b),S.sr);
+  // with a separated voice: ignore frames where the voice is not really there (instrument bleed between words shows up as low notes)
+  if(S.stem&&S.dom){const f0=ph.start/S.hop;for(let f=0;f<tr.midi.length;f++){const g=Math.round(f0+f*tr.hop/S.hop);const dm=S.dom[g];if((dm!==undefined&&dm<-12)||tr.rms[f]<tr.mx*0.12)tr.midi[f]=NaN}}
   ph.ref={key,tr};return tr;
 }
 
@@ -1552,8 +1591,14 @@ function noteSeg(tr){
     else{close();cur={f0:f,lastF:f,vals:[v],mean:v}}
   }
   close();
-  const out=[];
+  let out=[];
   for(const n of notes){const l=out[out.length-1];if(l&&l.m===n.m&&n.t0-l.t1<0.08)l.t1=n.t1;else out.push(n)}
+  // weighted median of the melody; a short note more than 10 semitones away from it is an error, not a note
+  if(out.length>2){
+    const w=out.map(n=>({m:n.m,d:n.t1-n.t0})).sort((a,b)=>a.m-b.m),tot=w.reduce((a,x)=>a+x.d,0);let acc=0,med=w[0].m;for(const x of w){acc+=x.d;if(acc>=tot/2){med=x.m;break}}
+    // below the melody it is an instrument (a cello, a bass) leaking into the voice track, however long it lasts
+    out=out.filter(n=>n.m>=med-10&&(n.m-med<=10||n.t1-n.t0>=0.35));
+  }
   tr.notes=out;return out;
 }
 // your pitch as [{t (phrase time), m (folded)}]
