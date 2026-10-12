@@ -30,6 +30,22 @@ body.simple .step b{font-size:24px}
 body.simple .pbtn{padding:10px 8px}
 body.simple .wave-wrap{border-radius:8px;height:110px}
 .help-s{font-size:13px;color:var(--muted);margin:8px 0 0}
+.range-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.range-head h2{font-family:var(--display);font-size:22px;margin:2px 0 4px}
+.range-head p{margin:0;max-width:70ch}
+.range-step{display:flex;flex-direction:column;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.range-step h3{font-family:var(--display);font-size:24px;margin:0}
+.range-ans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:640px}
+.range-ans .step{min-height:0}
+.range-ans .step b{font-size:19px}
+.range-ans .step.yes{border-color:var(--good)}.range-ans .step.yes:hover{background:var(--ref-soft)}
+.range-ans .step.no{border-color:var(--you)}.range-ans .step.no:hover{background:var(--you-soft)}
+.range-res{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.range-big{font-family:var(--display);font-size:26px;line-height:1.2}
+.range-big b{background:var(--rk-groc);padding:0 6px;border-radius:5px}
+.range-kb{display:block;width:100%;height:120px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.range-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+@media (max-width:640px){.range-ans{grid-template-columns:minmax(0,1fr)}}
 [hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-inline:16px;padding-block:68px 40px}
@@ -426,6 +442,44 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     </div>
   </section>
 
+  <section class="panel range" id="rangePanel" aria-label="Rang vocal" hidden>
+    <div class="range-head">
+      <div>
+        <div class="eyebrow">El teu rang vocal</div>
+        <h2>Fins on arriba la teva veu?</h2>
+        <p class="help-s" id="rIntro">Et posaré una frase d’aquesta cançó cada vegada més aguda, i després una altra cada vegada més greu. Canta-la amb la veu guia i digue’m si hi arribes bé. Al final sabràs entre quines notes et va bé cantar i quin to et convé per a aquesta cançó. Triga uns tres minuts.</p>
+      </div>
+      <div class="range-row">
+        <label for="rBack" class="adv-only stat-l">Sona <select id="rBack"><option value="guide" selected>la veu guia i la base</option><option value="base">només la base</option></select></label>
+        <button class="btn" id="rStart" type="button">Comença</button>
+      </div>
+    </div>
+    <div class="range-step" id="rStep" hidden>
+      <div class="eyebrow" id="rStepL"></div>
+      <h3 id="rStepT"></h3>
+      <p class="meta" id="rStepM" style="margin:0"></p>
+      <div class="range-ans">
+        <button class="step yes" id="rYes" type="button"><b>Sí, hi arribo bé</b><small>la puc cantar sense forçar la veu</small></button>
+        <button class="step no" id="rNo" type="button"><b id="rNoT">No, és massa aguda</b><small>no hi arribo, o em costa molt</small></button>
+      </div>
+      <div class="range-row">
+        <button class="sbtn" id="rPlay" type="button">▶ Torna a sentir-la</button>
+        <button class="sbtn" id="rQuit" type="button">Deixa-ho</button>
+        <span class="stat-l" id="rStatus"></span>
+      </div>
+    </div>
+    <div class="range-res" id="rRes" hidden>
+      <div class="range-big" id="rResT"></div>
+      <canvas class="range-kb" id="cvRange" aria-label="Teclat amb el teu rang i el de la cançó"></canvas>
+      <p id="rResM" style="margin:0"></p>
+      <div class="range-row">
+        <button class="btn" id="rApply" type="button" hidden></button>
+        <button class="sbtn" id="rAgain" type="button">Torna-ho a fer</button>
+        <span class="stat-l" id="rResD"></span>
+      </div>
+    </div>
+  </section>
+
   <section class="panel help simple-only">
     <h3>Com funciona</h3>
     <p><b>1.</b> Tria una cançó. <b>2.</b> Espera que el programa en separi la veu. <b>3.</b> Tria una frase, prem <b>Escolta</b> per sentir-la i <b>Canta-la</b> per cantar-la amb la música. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
@@ -434,6 +488,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     <h3>Com funciona</h3>
     <p><b>1. Carrega una cançó</b> (MP3, WAV, M4A). <b>2. Separa la veu</b>: el programa fa servir Demucs, un model obert, dins del teu navegador; la cançó no surt del teu ordinador. <b>3. Treballa frase a frase</b>: les frases i la melodia es treuen només de la pista de veu. Escolta la frase, repeteix-la cantant sobre la base i mira quines notes has encertat.</p>
     <p><b>To i velocitat.</b> Pots pujar o baixar el to de tota la cançó fins a 6 semitons perquè vagi bé a la teva veu (les notes de l’original es desplacen igual), i escoltar i cantar la frase més lenta (85, 70 o 55 %) sense que canviï el to. La comparació ho té en compte, i cada presa recorda amb quin to i velocitat es va cantar. La cançó sencera va a velocitat normal.</p>
+    <p><b>El teu rang vocal.</b> A sota de tot hi ha una prova curta: el programa agafa la frase més aguda de la cançó i la va pujant de dos en dos semitons mentre la cantes amb la veu guia; quan dius que ja no hi arribes, prova el semitò del mig. Després fa el mateix cap avall amb la frase més greu. Amb el resultat et diu entre quines notes et va bé cantar i quin to et convé per a aquesta cançó, i te’l pot posar directament. El rang es desa amb la sessió.</p>
     <p><b>Canta amb auriculars.</b> Si la base surt pels altaveus, el micròfon també la grava i la comparació es confon. Amb auriculars Bluetooth, grava amb el micròfon de l’ordinador, no amb el dels auriculars: el retard es corregeix sol en acabar la presa.</p>
     <p><b>A la comparació,</b> clica una barra de nota per sentir aquella nota: primer l’original i després tu. Clica en un espai buit per triar des d’on sona la reproducció (l’original, tu o les dues); doble clic per tornar al principi. Els dos volums («La teva veu» i «Base») valen per a totes les escoltes de la teva veu i es poden moure mentre sona. La reverb només s’aplica en escoltar-te; el WAV que descarregues és la veu neta.</p>
     <p><b>Dreceres:</b> <kbd>Espai</kbd> escolta · <kbd>R</kbd> repeteix · <kbd>Intro</kbd> cicle · <kbd>←</kbd> <kbd>→</kbd> frase anterior/següent · <kbd>Esc</kbd> atura. Les preses es guarden només mentre la pàgina està oberta; descarrega-les en WAV si les vols conservar.</p>
@@ -643,6 +698,14 @@ function detect(){
   for(let i=0;i<ph.length-1;i++)if(ph[i][1]>ph[i+1][0]){const m=(ph[i][1]+ph[i+1][0])/2;ph[i][1]=m;ph[i+1][0]=m}
   S.phrases=ph.map(([s,e])=>({id:uid++,start:s,end:e,raw:{s,e},takes:[],ref:null}));
   if(S.beats)snapPhrases();
+  // a whole stretch pitched an octave or more below the rest of the song is an instrument leaking into the voice track, not the singer
+  if(S.stem&&S.phrases.length>2){
+    const wmed=ns=>{const w=ns.map(n=>({m:n.m,d:n.t1-n.t0})).sort((a,b)=>a.m-b.m),tot=w.reduce((a,x)=>a+x.d,0);let acc=0;for(const x of w){acc+=x.d;if(acc>=tot/2)return x.m}return NaN};
+    const all=[];const meds=S.phrases.map(p=>{const ns=noteSeg(refTrack(p));all.push(...ns);return ns.length?wmed(ns):NaN});
+    const M=wmed(all);
+    if(!isNaN(M))S.phrases=S.phrases.filter((p,i)=>{if(isNaN(meds[i])||meds[i]>=M-12)return true;S.ghosts.push({start:p.start,end:p.end,why:'sembla un instrument, no veu'});return false});
+    S.ghosts.sort((a,b)=>a.start-b.start);
+  }
 }
 function refTrack(ph){
   const key=ph.start.toFixed(3)+'|'+ph.end.toFixed(3);
@@ -759,7 +822,7 @@ function buildSession(){
       stem:S.stem?{L:toI16(S.stem.L),R:S.stem.L===S.stem.R?null:toI16(S.stem.R)}:null,sepBy:S.sepBy,approx:!!S.approx,
       period:S.period||null,dbShift:S.dbShift||0,meter:$('#meter').value,
       phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,lyr:p.lyr||'',takes:p.takes.map(takeOut)})),
-      ghosts:S.ghosts||[],
+      ghosts:S.ghosts||[],range:S.range||null,
       fullTakes:(S.fullTakes||[]).map(f=>({n:f.n,data:toI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,semis:f.semis||0,id:f.id})),
       opts:{back:$('#oBack').value,pre:$('#oPre').value,level:$('#oLevel').value,verb:$('#oVerb').value,times:$('#oTimes').value,gyou:S.gyou,gbase:S.gbase,semis:S.semis}};
 }
@@ -826,7 +889,8 @@ async function resumeSession(sess){
       if(sess.opts.gbase!=null){S.gbase=sess.opts.gbase;$('#gBase').value=S.gbase;$('#gBaseV').textContent=Math.round(S.gbase*100)+'%'}}
     for(const p of S.phrases)for(const t of p.takes){t.track=pitchTrack(t.data,t.sr);compareData(p,t)}
     S.cur=S.phrases.length?0:-1;S.take=null;
-    $('#work').hidden=!(S.stem||S.approx);$('#fullRow').hidden=!(S.stem||S.approx);
+    $('#work').hidden=!(S.stem||S.approx);$('#fullRow').hidden=!(S.stem||S.approx);$('#rangePanel').hidden=!(S.stem||S.approx);
+    S.range=sess.range||null;rangeReset();
     renderAll();renderSep();renderFullTakes();
     toast('Sessió recuperada: '+S.phrases.length+' frases.');
     if(sess.opts&&sess.opts.semis)setKey(sess.opts.semis);
@@ -834,7 +898,7 @@ async function resumeSession(sess){
 }
 
 /* ---------- start screen and drag & drop ---------- */
-function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;$('#bExport').hidden=!has||S.demo;if(!has)$('#work').hidden=true}
+function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;$('#bExport').hidden=!has||S.demo;if(!has){$('#work').hidden=true;$('#rangePanel').hidden=true}}
 /* ---------- robust audio decoding: sniff the real container, strip tags, skip junk, and fall back to a WASM MP3 decoder ---------- */
 function sniffAudio(u8){
   const s4=String.fromCharCode(...u8.subarray(0,4)),s8=String.fromCharCode(...u8.subarray(4,12));
@@ -920,7 +984,7 @@ function loadSong(keepPhrases){
   const ready=!!S.stem||S.approx;
   if(!keepPhrases){S.phrases=[];if(ready){detect();if(S.beats)S.dbShift=bestDownbeat()}S.cur=S.phrases.length?0:-1;S.take=null;S.cursor=0}
   else S.phrases.forEach(p=>p.ref=null);
-  $('#work').hidden=!ready;$('#fullRow').hidden=!ready;$('#lDom').hidden=!S.stem;$('#lCons').hidden=!S.stem;
+  $('#work').hidden=!ready;$('#fullRow').hidden=!ready;$('#rangePanel').hidden=!ready;$('#lDom').hidden=!S.stem;$('#lCons').hidden=!S.stem;if(!keepPhrases){S.range=null;rangeReset()}
   $('#songName').textContent=S.name;
   const dur=S.len/S.sr;
   $('#songMeta').textContent=fmt(dur)+' · '+(S.mono?'mono':'estèreo')+' · '+Math.round(S.sr/100)/10+' kHz';
@@ -1367,6 +1431,141 @@ async function doRecord(ph,id){
   setPhase(null,cd&&cd.n>10?'Presa '+n+' desada. Mira la comparació.':'Presa '+n+' desada, però gairebé no hi he detectat veu. Comprova el nivell del micròfon.');
   renderPhrases();renderDesk();
 }
+
+/* ---------- vocal range: sing one phrase of the song higher and higher, then another lower and lower ---------- */
+const noteName=m=>NOTE[((m%12)+12)%12]+(Math.floor(m/12)-1);
+const semisTxt=n=>(n>0?'+':n<0?'−':'')+Math.abs(n)+' semiton'+(Math.abs(n)===1?'':'s');
+function phraseRange(ph){
+  const notes=noteSeg(refFor(ph,0)).filter(n=>n.t1-n.t0>=0.2);
+  if(!notes.length)return null;
+  let lo=Infinity,hi=-Infinity,dur=0;for(const n of notes){if(n.m<lo)lo=n.m;if(n.m>hi)hi=n.m;dur+=n.t1-n.t0}
+  return{lo,hi,dur};
+}
+function songRange(){
+  let lo=Infinity,hi=-Infinity;for(const p of S.phrases){const r=phraseRange(p);if(!r)continue;if(r.lo<lo)lo=r.lo;if(r.hi>hi)hi=r.hi}
+  return lo===Infinity?null:{lo,hi};
+}
+// the phrase that reaches the song's top (or bottom), preferring short ones with plenty of singing in them
+function pickPhrase(dir){
+  let best=null,bs=-Infinity;
+  S.phrases.forEach((p,i)=>{const r=phraseRange(p);if(!r)return;
+    const extreme=dir>0?r.hi:r.lo,len=p.end-p.start;
+    const sc=extreme*dir*3-(len>6?len-6:0)*2+Math.min(r.dur,3)-(len<1.2?4:0);
+    if(sc>bs){bs=sc;best={i,ph:p,r}}});
+  return best;
+}
+// a phrase of the song transposed by any number of semitones (resample, then stretch back to the original length)
+const shiftCache=new Map();
+function segmentShifted(s,e,gv,ga,semis){
+  const key=[s.toFixed(3),e.toFixed(3),gv,ga,semis].join('|');if(shiftCache.has(key))return shiftCache.get(key);
+  const a=Math.max(0,Math.round(s*S.sr)),b=Math.min(S.len,Math.round(e*S.sr)),n=Math.max(1,b-a),fade=Math.round(0.02*S.sr);
+  const L=new Float32Array(n),R=new Float32Array(n);
+  for(let i=0;i<n;i++){const w=i<fade?i/fade:i>n-fade?(n-i)/fade:1;L[i]=w*(gv*S.vL[a+i]+ga*S.iL[a+i]);R[i]=w*(gv*S.vR[a+i]+ga*S.iR[a+i])}
+  let out=[L,R];
+  if(semis){const r=Math.pow(2,semis/12);out=stretchChannels(S.vL===S.vR&&S.iL===S.iR?[resampleBy(L,r)]:[resampleBy(L,r),resampleBy(R,r)],1/r);if(out.length===1)out=[out[0],out[0]]}
+  if(shiftCache.size>16)shiftCache.delete(shiftCache.keys().next().value);
+  shiftCache.set(key,out);return out;
+}
+const RG={on:false,dir:0,pick:null,cur:0,yes:null,no:null,up:null,down:null,asked:0};
+function rangeReset(){RG.on=false;$('#rStep').hidden=true;$('#rStart').hidden=false;$('#rIntro').hidden=false;const has=!!S.range;$('#rRes').hidden=!has;if(has)renderRangeResult()}
+async function rangeStart(){
+  if(!S.phrases.length)return toast('Primer calen frases detectades.');
+  const hiP=pickPhrase(1),loP=pickPhrase(-1);
+  if(!hiP||!loP)return toast('No he trobat prou notes cantades a la cançó per fer la prova.');
+  RG.on=true;RG.hiP=hiP;RG.loP=loP;RG.up=null;RG.down=null;RG.asked=0;
+  $('#rStart').hidden=true;$('#rIntro').hidden=true;$('#rRes').hidden=true;$('#rStep').hidden=false;
+  rangePhase(1);
+}
+function rangePhase(dir){RG.dir=dir;RG.pick=dir>0?RG.hiP:RG.loP;RG.cur=0;RG.yes=null;RG.no=null;rangeShow()}
+function rangeShow(){
+  const d=RG.dir,pk=RG.pick,r=pk.r,m=(d>0?r.hi:r.lo)+RG.cur;RG.asked++;
+  $('#rStepL').textContent='Pas '+RG.asked+' · '+(d>0?'cap amunt':'cap avall');
+  $('#rStepT').textContent='Frase '+(pk.i+1)+(pk.ph.lyr?' («'+pk.ph.lyr+'»)':'')+', '+(RG.cur?'a '+semisTxt(RG.cur):'al to original');
+  $('#rStepM').textContent='La nota més '+(d>0?'aguda':'greu')+' d’aquesta frase serà '+noteName(m)+'. Canta-la amb la veu'+($('#rBack').value==='base'?' sobre la base':' guia')+' i després respon.';
+  $('#rNoT').textContent=d>0?'No, és massa aguda':'No, és massa greu';
+  $('#rStatus').textContent='';
+  rangePlay();
+}
+async function rangePlay(){
+  if(!RG.on)return;cancel();const id=runId,pk=RG.pick,ph=pk.ph;
+  const gv=$('#rBack').value==='base'?0:S.gv,s=Math.max(0,ph.start-0.4),e=Math.min(S.len/S.sr,ph.end+0.4);
+  $('#rStatus').textContent=RG.cur?'Preparant la frase a '+semisTxt(RG.cur)+'…':'';await sleep(10);
+  if(id!==runId)return;
+  const chs=segmentShifted(s,e,gv,S.ga,RG.cur),start=ac().currentTime+0.05;
+  playChannels(chs,S.sr,start);S.play={t0:start,from:s,to:e,rate:1};
+  $('#rStatus').textContent='Sona… canta-la!';
+  await waitUntil(start+(e-s)+0.05,id);
+  if(id===runId)$('#rStatus').textContent='Hi has arribat bé? Si vols, torna a sentir-la.';
+}
+function rangeAnswer(ok){
+  if(!RG.on)return;cancel();
+  const d=RG.dir,LIM=14;
+  if(ok)RG.yes=RG.yes==null||RG.cur*d>RG.yes*d?RG.cur:RG.yes;else RG.no=RG.no==null||RG.cur*d<RG.no*d?RG.cur:RG.no;
+  let next=null;
+  if(RG.yes==null){next=RG.cur-2*d;if(next*d<-LIM)next=null}                    // not even the original: come back towards the middle
+  else if(RG.no==null){next=RG.cur+2*d;if(next*d>LIM)next=null}                 // keep going until it breaks
+  else if(Math.abs(RG.no-RG.yes)>1)next=RG.yes+d;                                // one semitone between yes and no: try it
+  if(next!=null){RG.cur=next;rangeShow();return}
+  const res={semis:RG.yes,note:RG.yes==null?null:(d>0?RG.pick.r.hi:RG.pick.r.lo)+RG.yes,phrase:RG.pick.i,open:RG.no==null&&RG.yes!=null};
+  if(d>0){RG.up=res;rangePhase(-1)}else{RG.down=res;rangeFinish()}
+}
+function rangeFinish(){
+  RG.on=false;$('#rStep').hidden=true;
+  const up=RG.up,dn=RG.down;
+  if(up.note==null||dn.note==null){S.range=null;$('#rStart').hidden=false;$('#rIntro').hidden=false;toast('No he pogut trobar el teu rang amb aquesta cançó: potser la frase era massa difícil. Prova amb una altra cançó o torna-ho a fer.');return}
+  S.range={lo:Math.min(dn.note,up.note),hi:Math.max(dn.note,up.note),at:Date.now(),openHi:up.open,openLo:dn.open,song:S.name};
+  saveSoon();$('#rRes').hidden=false;renderRangeResult();$('#rRes').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+// which key puts the song inside the singer's range (or as much of it as possible)
+function bestKey(song,rg){
+  const c=(rg.lo+rg.hi)/2-(song.lo+song.hi)/2;let best=0,be=Infinity,bd=Infinity;
+  for(let t=-6;t<=6;t++){const ex=Math.max(0,rg.lo-(song.lo+t))+Math.max(0,(song.hi+t)-rg.hi),dd=Math.abs(t-c)+Math.abs(t)*0.01;
+    if(ex<be-1e-9||(Math.abs(ex-be)<1e-9&&dd<bd)){be=ex;bd=dd;best=t}}
+  return{t:best,excess:be};
+}
+function renderRangeResult(){
+  const rg=S.range;if(!rg)return;
+  const span=rg.hi-rg.lo,oct=span>=24?'dues octaves':span>=19?'una octava i mitja':span>=12?'més d’una octava':span>=7?'més de mitja octava':'poc més de mitja octava';
+  $('#rResT').innerHTML='Et va bé cantar entre <b>'+noteName(rg.lo)+'</b> i <b>'+noteName(rg.hi)+'</b> <span class="stat-l" style="font-family:var(--body);font-size:14px">('+span+' semitons, '+oct+')</span>';
+  const song=songRange(),ap=$('#rApply');let msg='';
+  if(song){
+    const bk=bestKey(song,rg),fits0=song.lo>=rg.lo&&song.hi<=rg.hi;
+    msg='Aquesta cançó va de '+noteName(song.lo)+' a '+noteName(song.hi)+'. ';
+    if(fits0&&bk.t===0)msg+='Al to original ja et va bé: tota la cançó queda dins del teu rang.';
+    else if(fits0)msg+='Al to original ja hi arribes a tot; a '+semisTxt(bk.t)+' et quedaria encara més al mig de la veu.';
+    else if(bk.excess===0)msg+='Al to original '+(song.hi>rg.hi?'les notes agudes et queden massa amunt':'les notes greus et queden massa avall')+'. A '+semisTxt(bk.t)+' tota la cançó queda dins del teu rang ('+noteName(song.lo+bk.t)+' – '+noteName(song.hi+bk.t)+').';
+    else msg+='Té '+(song.hi-song.lo)+' semitons de rang, més que els '+span+' que t’hem trobat. El millor és '+(bk.t?semisTxt(bk.t):'el to original')+': queden '+Math.round(bk.excess)+' semiton'+(Math.round(bk.excess)===1?'':'s')+' fora, que pots cantar a l’octava o treballar a poc a poc.';
+    if(bk.t!==S.semis){ap.hidden=false;ap.textContent='Posa la cançó a '+(bk.t?semisTxt(bk.t):'to original');ap.onclick=async()=>{await setKey(bk.t);renderRangeResult()}}else ap.hidden=true;
+  }else ap.hidden=true;
+  $('#rResM').textContent=msg;
+  $('#rResD').textContent=(rg.openHi?'A dalt potser arribes encara més amunt. ':'')+(rg.openLo?'A baix potser arribes encara més avall. ':'')+'El rang canvia amb el dia i amb l’escalfament; repeteix la prova de tant en tant.';
+  drawRangeKeys(rg,song);
+}
+function drawRangeKeys(rg,song){
+  const cv=$('#cvRange');if(!cv.offsetParent&&cv.getBoundingClientRect().width===0)return;
+  const{g,w,h}=fitCanvas(cv);g.clearRect(0,0,w,h);
+  const lo=Math.min(36,rg.lo-2,song?song.lo-2:99),hi=Math.max(83,rg.hi+2,song?song.hi+2:0);
+  const m0=Math.floor(lo/12)*12,m1=Math.ceil((hi+1)/12)*12;            // whole octaves, C to B
+  const whites=[];for(let m=m0;m<m1;m++)if(NAT[m%12])whites.push(m);
+  const kw=w/whites.length,top=34,kh=h-top-4,bh=kh*0.58;
+  const xOf=m=>{let i=0;for(const wm of whites){if(wm===m)return i*kw;if(wm>m)return i*kw-kw*0.3;i++}return w};
+  const widthOf=m=>NAT[m%12]?kw:kw*0.6;
+  g.fillStyle='#fff';g.fillRect(0,top,w,kh);
+  // the singer's range, as a wash over the keys
+  g.fillStyle=tok('--rk-groc');g.globalAlpha=.55;g.fillRect(xOf(rg.lo),top,xOf(rg.hi)+widthOf(rg.hi)-xOf(rg.lo),kh);g.globalAlpha=1;
+  whites.forEach((m,i)=>{g.strokeStyle=tok('--line');g.strokeRect(i*kw+.5,top+.5,kw-1,kh-1);if(m%12===0){g.fillStyle=tok('--muted');g.font='11px '+tok('--mono');g.textAlign='center';g.fillText('Do'+(m/12-1),i*kw+kw/2,h-8)}});
+  for(let m=m0;m<m1;m++)if(!NAT[m%12]){const inR=m>=rg.lo&&m<=rg.hi;g.fillStyle=inR?'#8a6a00':tok('--ink');g.fillRect(xOf(m),top,widthOf(m),bh)}
+  // the song's range, as a bar above
+  if(song){const x0=xOf(song.lo),x1=xOf(song.hi)+widthOf(song.hi);g.fillStyle=tok('--ref');g.fillRect(x0,top-14,x1-x0,6);g.font='12px '+tok('--body');g.textAlign='left';g.fillStyle=tok('--ink');g.fillText('La cançó: '+noteName(song.lo)+' – '+noteName(song.hi),Math.max(2,Math.min(x0,w-150)),top-18)}
+  g.font='12px '+tok('--body');g.fillStyle=tok('--ink');g.textAlign='right';g.fillText('Tu: '+noteName(rg.lo)+' – '+noteName(rg.hi),w-4,top-18);
+}
+$('#rStart').addEventListener('click',rangeStart);
+$('#rAgain').addEventListener('click',rangeStart);
+$('#rYes').addEventListener('click',()=>rangeAnswer(true));
+$('#rNo').addEventListener('click',()=>rangeAnswer(false));
+$('#rPlay').addEventListener('click',rangePlay);
+$('#rQuit').addEventListener('click',()=>{cancel();rangeReset()});
+window.addEventListener('resize',()=>{if(S.range&&!$('#rRes').hidden)drawRangeKeys(S.range,songRange())});
 
 /* ---------- full-song recording: sing it through with the base; phrases get their takes afterwards ---------- */
 let fullRec=null;
@@ -1993,6 +2192,7 @@ function download(t,ph){saveBlob(wavBlob([t.data],t.sr),S.name+' - frase '+(S.ph
 document.addEventListener('keydown',e=>{
   if(e.target.closest('input,select,textarea')||e.metaKey||e.ctrlKey||e.altKey)return;
   const k=e.key;
+  if(e.target.closest('#rangePanel')&&k!=='Escape')return;
   if(k==='+'||k==='='){e.preventDefault();$('#zIn').click();return}
   if(k==='-'){e.preventDefault();$('#zOut').click();return}
   const map={' ':listen,'r':recordOnly,'R':recordOnly,'Enter':cycle,'Escape':()=>{if(fullRec)fullStop();else cancel()},'ArrowLeft':()=>{cancel();select(S.cur-1)},'ArrowRight':()=>{cancel();select(S.cur+1)}};
