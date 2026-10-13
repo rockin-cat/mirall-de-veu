@@ -26,10 +26,11 @@
 body.simple .adv-only{display:none!important}
 body:not(.simple) .simple-only{display:none!important}
 body.simple .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
-body.simple .step b{font-size:24px}
+body.simple .step b{font-size:21px}
 body.simple .pbtn{padding:10px 8px}
-body.simple .wave-wrap{border-radius:8px;height:110px}
+body.simple .wave-wrap{border-radius:8px}
 .help-s{font-size:13px;color:var(--muted);margin:8px 0 0}
+.range{flex:none;max-width:980px}
 .range-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
 .range-head h2{font-family:var(--display);font-size:22px;margin:2px 0 4px}
 .range-head p{margin:0;max-width:70ch}
@@ -50,23 +51,38 @@ body.simple .wave-wrap{border-radius:8px;height:110px}
 .range-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 [hidden]{display:none!important}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-inline:16px;padding-block:68px 40px}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--body);padding:0}
 h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:0}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.wrap{display:flex;flex-direction:column;min-height:100vh}
+/* app shell: top bar with tabs · one view at a time · bottom bar with the transport */
+.app{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 16px}
+.view{display:none;flex:1;min-height:0;flex-direction:column;gap:12px}
+.view.on{display:flex}
+.tabs{display:flex;gap:2px;margin-left:8px;flex-wrap:wrap}
+.tab{border:0;background:transparent;color:var(--ink);font-weight:700;font-size:14px;padding:7px 14px;border-radius:7px;cursor:pointer;opacity:.78}
+.tab:hover{background:rgba(34,31,32,.08);opacity:1}
+.tab.on{background:var(--ink);color:var(--rk-groc);opacity:1}
+.tab:disabled{opacity:.35;cursor:default;background:transparent}
+.statusbar{flex:none;display:flex;align-items:center;gap:8px 20px;flex-wrap:wrap;padding:6px 16px;border-top:1px solid var(--line);background:var(--panel);font-size:13px;min-height:44px}
+.sb-song{display:flex;align-items:baseline;gap:8px;min-width:0;max-width:34ch}
+.sb-song b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-opts{margin-left:auto}
+.sb-opts label{display:flex;align-items:center;gap:5px;color:var(--muted)}
+.transport{gap:4px}
 
 /* top bar */
-.topbar{position:fixed;top:0;left:0;right:0;height:68px;z-index:1500;background:var(--rk-groc);color:var(--rk-tinta);display:flex;align-items:center;gap:16px;padding:0 20px}
+.topbar{flex:none;height:56px;z-index:1500;background:var(--rk-groc);color:var(--rk-tinta);display:flex;align-items:center;gap:16px;padding:0 16px}
 .topbar .brand{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;min-width:0}
-.topbar .brand img{height:44px;width:auto;display:block}
-.topbar .brand span{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .brand img{height:36px;width:auto;display:block}
+.topbar .brand span{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .loaders{margin-left:auto;display:flex;gap:8px}
 .topbar .btn.ghost{border-color:var(--rk-tinta);color:var(--rk-tinta)}
-@media (max-width:560px){.topbar .brand span{font-size:16px}.topbar .brand img{height:34px}}
-.wrap{padding-top:16px}
-.start{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:48px 24px;border:2px dashed var(--rk-groc);background:#FFF7DC}
+@media (max-width:1180px){.topbar .brand span{display:none}.topbar .btn{padding:6px 10px;font-size:13px}.tab{padding:7px 10px;font-size:13px}}
+@media (max-width:560px){.topbar .brand img{height:30px}}
+.start{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:48px 24px;border:2px dashed var(--rk-groc);background:#FFF7DC;flex:1}
 .start.over{background:var(--you-soft);border-color:var(--you)}
 .start-t{font-size:34px}
 .start-s{margin:0;max-width:52ch;color:var(--muted);font-size:15px}
@@ -80,13 +96,15 @@ button,select,input{font:inherit;color:inherit}
 .btn:disabled{opacity:.45;cursor:default}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
 .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .meta{color:var(--muted);margin:2px 0 0;font-size:13px}
 
 /* song strip */
-.song-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px;margin-bottom:10px}
-.song-head h1{font-size:24px}
+#songPanel{display:flex;flex-direction:column;min-height:0}
+#songPanel[hidden]{display:none!important}
+.song-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 24px;margin-bottom:8px}
+.song-head h1{font-size:22px}
 .mixer{display:flex;flex-wrap:wrap;gap:8px 20px}
 .fader{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);min-width:150px}
 .fader span{display:flex;justify-content:space-between}
@@ -113,14 +131,16 @@ button,select,input{font:inherit;color:inherit}
 .adv.inline{flex:none}
 .adv.inline .adv-body{padding-top:6px}
 .edit-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-bottom:6px}
-.full-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px}
+.full-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0 0;font-size:13px}
+.full-row[hidden]{display:none!important}
+.full-list{max-height:120px;overflow:auto}
 .rec-btn{color:var(--rec);border-color:var(--rec);font-weight:700}
 .rec-btn.on{background:var(--rec);color:#fff}
 .full-list{flex-basis:100%;margin-top:4px}
 .edit-bar .group{gap:4px}
 .mini-wrap{height:34px;border-radius:6px 6px 0 0;background:var(--sunk);overflow:hidden;touch-action:none;border-bottom:1px solid var(--line)}
 #cvMini{width:100%;height:100%;display:block;cursor:grab}
-.wave-wrap{position:relative;height:150px;border-radius:0 0 8px 8px;background:var(--sunk);overflow:hidden;touch-action:none}
+.wave-wrap{position:relative;flex:none;height:150px;border-radius:0 0 8px 8px;background:var(--sunk);overflow:hidden;touch-action:none}
 #cvSong{width:100%;height:100%;display:block;cursor:crosshair}
 .song-tools{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-start;margin-top:10px}
 .group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -140,39 +160,46 @@ details.detect summary{cursor:pointer;color:var(--muted);font-weight:700}
 .detect-body label{display:flex;flex-direction:column;align-items:flex-start;gap:2px;color:var(--muted);font-size:12px}
 
 /* work area */
-.work{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
-.phrases{padding:12px}
-.phrases h2{font-size:16px;margin:2px 4px 8px;display:flex;justify-content:space-between}
-.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:560px;overflow:auto}
+.work{display:grid;grid-template-columns:240px minmax(0,1fr);gap:12px;align-items:stretch;flex:1;min-height:0}
+.work[hidden]{display:none!important}
+.phrases{padding:10px;display:flex;flex-direction:column;min-height:0}
+.phrases h2{font-size:15px;margin:2px 4px 8px;display:flex;justify-content:space-between}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;flex:none;max-height:60vh;overflow:auto}
 .pitem{position:relative}
 .pdel{position:absolute;right:6px;bottom:6px;border:0;background:transparent;color:var(--muted);font-size:12px;line-height:1;padding:3px 6px;border-radius:5px;cursor:pointer;opacity:0}
 .pitem:hover .pdel,.pitem:focus-within .pdel{opacity:1}
 .pdel:hover{background:var(--you-soft);color:var(--you)}
 #toast button{margin-left:12px;border:1px solid var(--bg);background:transparent;color:inherit;border-radius:5px;padding:2px 8px;cursor:pointer;font:inherit}
 #toast{pointer-events:auto}
-.pbtn{width:100%;display:grid;grid-template-columns:28px 1fr auto;gap:2px 8px;align-items:center;text-align:left;border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 8px;cursor:pointer}
+.pbtn{width:100%;display:grid;grid-template-columns:28px 1fr auto;gap:1px 8px;align-items:center;text-align:left;border:1px solid transparent;background:transparent;border-radius:8px;padding:5px 8px;cursor:pointer}
 .pbtn:hover{background:var(--sunk)}
 .pbtn.sel{background:var(--ref-soft);border-color:var(--ref)}
 .pnum{font-family:var(--display);font-weight:700;font-size:18px;color:var(--ref);grid-row:span 2}
 .ptime{font-family:var(--mono);font-size:12px}
 .psub{font-size:11px;color:var(--muted);grid-column:2}
 .plyr{grid-column:2/4;font-size:13px;line-height:1.3;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pline{font-family:var(--display);font-size:20px;line-height:1.25;margin:4px 0 0;color:var(--ink);max-width:60ch}
+.pline{font-family:var(--display);font-size:18px;line-height:1.25;margin:0;color:var(--ink);flex:1;min-width:200px}
 .pline input{font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px dashed var(--line);width:100%;padding:2px 0}
 .pline input:focus{outline:0;border-bottom-color:var(--ink)}
 .chip{font-family:var(--mono);font-size:11px;font-weight:600;border-radius:99px;padding:1px 7px;border:1px solid currentColor;white-space:nowrap}
 .chip.good{color:var(--good)} .chip.mid{color:var(--mid)} .chip.low{color:var(--low)} .chip.none{color:var(--muted);border-style:dashed}
 
-.desk{display:flex;flex-direction:column;gap:14px;min-width:0}
-.desk-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:flex-start}
-.desk-head h2{font-size:30px;line-height:1.1}
+.desk{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
+.desk-top{display:flex;flex-direction:column;gap:10px;flex:none}
+.desk-head{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.desk-id{display:flex;align-items:baseline;gap:10px;flex:none}
+.desk-id .meta{margin:0}
+.desk-head h2{font-size:20px;line-height:1.1;white-space:nowrap}
+.cmp-panel{flex:1;min-height:0;display:flex;flex-direction:column}
+.takes-panel{flex:none;padding:8px 12px}
+.takes-panel h3{font-size:14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .nudges{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);align-items:center}
 .nudges .group{gap:3px}
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.step{position:relative;text-align:left;border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-height:86px}
-.step b{font-family:var(--display);font-size:20px}
-.step small{color:var(--muted);font-size:12.5px;line-height:1.35}
-.step .k{position:absolute;top:10px;right:10px;font-family:var(--mono);font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.step{position:relative;text-align:left;border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;padding-right:52px;cursor:pointer;display:flex;flex-direction:column;gap:1px;min-height:54px;justify-content:center}
+.step b{font-family:var(--display);font-size:18px}
+.step small{color:var(--muted);font-size:12px;line-height:1.3}
+.step .k{position:absolute;top:8px;right:8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
 .step:hover{border-color:var(--muted)}
 .step.listen b{color:var(--ref)}
 .step.rec b{color:var(--rec)}
@@ -180,25 +207,27 @@ details.detect summary{cursor:pointer;color:var(--muted);font-weight:700}
 .step.listen.active{color:var(--ref)}
 .step.rec.active{color:var(--rec);box-shadow:0 0 0 3px var(--you-soft)}
 .step.cyc.active{color:var(--ink)}
-.opts{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13px}
+.opts{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:13px}
+.opts:empty{display:none}
 .opts label{display:flex;align-items:center;gap:6px}
 .meter{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
 .meter-bar{width:90px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
 .meter-bar i{display:block;height:100%;width:0;background:var(--good);transition:width .06s linear}
-.status{min-height:30px;display:flex;align-items:center;gap:10px;font-size:14px}
+.status:empty{display:none}
+.status{min-height:26px;display:flex;align-items:center;gap:10px;font-size:14px}
 .status .dot{width:10px;height:10px;border-radius:50%;background:var(--rec);animation:pulse 1s infinite}
 .progress{flex:1;max-width:280px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
 .progress i{display:block;height:100%;width:0;background:var(--rec)}
 @keyframes pulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.status .dot{animation:none}}
 
-.cmp-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px 16px;margin-bottom:8px}
+.cmp-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;margin-bottom:6px;flex:none}
 .level{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-right:auto}
-.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;margin-top:12px}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;margin-top:8px}
 .stars{font-size:34px;letter-spacing:4px;line-height:1;color:#FFC83D;text-shadow:0 0 10px rgba(255,200,61,.45)}
 .stars .off{color:var(--line);text-shadow:none}
-.verdict-t{font-family:var(--display);font-size:26px;font-weight:700;line-height:1.1}
-.verdict-s{font-size:15px;color:var(--muted);max-width:50ch}
+.verdict-t{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.1}
+.verdict-s{font-size:14px;color:var(--muted);max-width:60ch}
 .verdict .big{font-size:30px}
 .details{margin-top:8px;font-size:13px}
 .details summary{cursor:pointer;color:var(--muted);font-weight:700;width:max-content}
@@ -206,41 +235,59 @@ details.detect summary{cursor:pointer;color:var(--muted);font-weight:700}
 .legend{display:flex;gap:14px;font-size:13px;color:var(--muted);align-items:center}
 .legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
 .legend .r{background:#4A4442;border:1.5px solid #9A928E;height:10px;border-radius:5px} .legend .y{background:#FF8A4C} .legend .h{background:#FDBE10;height:10px;border-radius:5px;box-shadow:0 0 6px rgba(253,190,16,.8)}
-.cv-wrap{height:300px;border-radius:10px;background:#221F20;overflow:hidden}
+.cv-wrap{flex:none;height:300px;border-radius:10px;background:#221F20;overflow:hidden}
 #cvCmp{width:100%;height:100%;display:block}
-.stats{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:10px;align-items:baseline}
-#stats{margin-top:0}
-.big{font-family:var(--display);font-size:40px;font-weight:700;line-height:1}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:8px;align-items:baseline}
+#stats{margin-top:0;flex:none}
+.big{font-family:var(--display);font-size:32px;font-weight:700;line-height:1}
 .stat-l{font-size:12px;color:var(--muted)}
 .stat{display:flex;flex-direction:column;gap:2px;min-width:0}
 .stat b{font-size:15px}
-.cmp-tools{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:12px;font-size:13px}
+.cmp-tools{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin-top:8px;font-size:13px;flex:none}
 .cmp-tools label{display:flex;align-items:center;gap:6px;color:var(--muted)}
 .mixer2{display:flex;flex-wrap:wrap;gap:6px 16px}
 .mixer2 .fader{min-width:140px}
 .fader.y input{accent-color:var(--you)}
 
-.tlist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
-.take{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.tlist{list-style:none;margin:6px 0 0;padding:0 0 2px;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;overflow-x:auto}
+.tlist.full-list{flex-direction:row;flex-basis:100%}
+.take{display:flex;flex-wrap:nowrap;align-items:center;gap:4px 6px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;flex:none}
+.full-list .take{max-width:none}
 .take.sel{border-color:var(--you);background:var(--you-soft)}
-.take-main{flex:1;min-width:160px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;background:none;border:0;cursor:pointer;text-align:left;padding:2px}
+.take-main{flex:1;min-width:120px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;background:none;border:0;cursor:pointer;text-align:left;padding:2px;font-size:13px}
 .take-main b{font-family:var(--display)}
 .take-main small{color:var(--muted)}
 .empty{color:var(--muted);font-size:13px;margin:6px 0 0}
-.help{font-size:13.5px;color:var(--muted);max-width:75ch}
+.help{font-size:14px;color:var(--muted);max-width:80ch;flex:none}
+#vHelp{overflow:auto}
 .help h3{font-size:15px;color:var(--ink);margin-bottom:4px}
 .help p{margin:0 0 8px}
 kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border-radius:4px;padding:0 4px;background:var(--panel)}
 .credit{font-size:12.5px;color:var(--muted);text-align:center;margin:8px 0 0}
 .credit a{color:inherit}
-#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;max-width:min(92vw,520px);opacity:0;pointer-events:none;transition:opacity .2s}
+#toast{position:fixed;left:50%;bottom:56px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;max-width:min(92vw,520px);opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.on{opacity:1}
 
+/* one screen, no page scrolling, when the window is big enough; otherwise the views scroll normally */
+@media (min-width:861px) and (min-height:700px){
+  .wrap{height:100vh}
+  .app{overflow:hidden}
+  #vHelp,#vRange{overflow:auto}
+  .wave-wrap{flex:1;min-height:120px}
+  .plist{flex:1;min-height:0;max-height:none}
+  .cv-wrap{flex:1;min-height:150px}
+}
 @media (max-width:860px){
   .work{grid-template-columns:minmax(0,1fr)}
-  .plist{flex-direction:row;overflow-x:auto;max-height:none;padding-bottom:4px}
+  .phrases{flex:none}
+  .plist{flex-direction:row;overflow-x:auto;flex:none;padding-bottom:4px}
   .plist li{flex:none}
   .pbtn{width:auto;min-width:150px;max-width:260px}
+  .cv-wrap{height:260px}
+  .wave-wrap{height:140px}
+  .plist{max-height:none}
+  .tabs{order:3;width:100%;margin:0;padding-bottom:6px}
+  .topbar{height:auto;flex-wrap:wrap;padding-top:6px}
 }
 @media (max-width:560px){
   .steps{grid-template-columns:minmax(0,1fr)}
@@ -254,6 +301,12 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
 <div class="wrap">
   <header class="topbar">
     <a class="brand" href="https://rockin.cat" target="_blank" rel="noopener"><img src="rockin-logo.svg" alt="Rockin" onerror="this.outerHTML='&lt;b style=&quot;font-family:Lora,serif;font-size:30px;letter-spacing:.02em&quot;&gt;ROCKIN&lt;/b&gt;'"><span>Mirall de veu</span></a>
+    <nav class="tabs" aria-label="Seccions">
+      <button class="tab on" type="button" data-view="song">Cançó</button>
+      <button class="tab" type="button" data-view="sing" disabled>Canta</button>
+      <button class="tab" type="button" data-view="range" disabled>Rang vocal</button>
+      <button class="tab" type="button" data-view="help">Ajuda</button>
+    </nav>
     <div class="loaders">
       <button class="btn ghost" id="bMode" type="button" title="Mode senzill: només el que cal per escoltar, cantar i veure el resultat">Mode complet</button>
       <button class="btn ghost" id="bExport" type="button" title="Desa la cançó, la veu separada, les frases i les preses en un fitxer .mirall" hidden>Desa la sessió</button>
@@ -262,6 +315,8 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     </div>
   </header>
 
+  <main class="app">
+  <section class="view on" id="vSong">
   <section class="panel start" id="startPanel" aria-label="Comença">
     <div class="eyebrow">Pas 1</div>
     <h1 class="start-t">Tria una cançó</h1>
@@ -279,11 +334,6 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
         <div class="eyebrow">Cançó</div>
         <h1 id="songName">—</h1>
         <p class="meta mono" id="songMeta"></p>
-      </div>
-      <div class="group" role="group" aria-label="Què sona" id="mixPresets">
-        <button class="sbtn" type="button" data-mix="1,1">▶ Cançó</button><button class="sbtn adv-only" type="button" data-mix="1,0">▶ Només veu</button><button class="sbtn adv-only" type="button" data-mix="0,1">▶ Només base</button>
-        <button class="sbtn" id="bStop" type="button">■ Atura <kbd>Esc</kbd></button>
-        <span class="clock mono" id="clock">0:00.0</span>
       </div>
     </div>
     <div class="sep" id="sepRow">
@@ -305,14 +355,6 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </div>
     </div>
     <p class="note" id="sepNote" hidden></p>
-    <div class="full-row adv-only" id="fullRow">
-      <span class="eyebrow">Cançó sencera</span>
-      <button class="sbtn rec-btn" id="bFull" type="button">● Canta-la tota des del cursor</button>
-      <button class="sbtn" id="bFullStop" type="button" hidden>■ Atura i desa</button>
-      <button class="sbtn" id="bFullPlay" type="button" hidden>▶ Escolta’t sencera amb la base</button>
-      <span class="stat-l" id="fullInfo">Et grava de seguit amb la base. Atura quan vulguis (Esc): les frases que hagis cantat queden amb la seva presa.</span>
-      <ul class="tlist full-list" id="fullList" hidden></ul>
-    </div>
     <div class="edit-bar adv-only">
       <div class="group">
         <button class="sbtn" id="zOut" type="button" title="Allunya (−)">−</button>
@@ -324,6 +366,14 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     </div>
     <div class="mini-wrap adv-only"><canvas id="cvMini" aria-label="Vista general de la cançó"></canvas></div>
     <div class="wave-wrap"><canvas id="cvSong" aria-label="Forma d'ona de la veu amb les frases marcades"></canvas></div>
+    <div class="full-row adv-only" id="fullRow">
+      <span class="eyebrow">Cançó sencera</span>
+      <button class="sbtn rec-btn" id="bFull" type="button">● Canta-la tota des del cursor</button>
+      <button class="sbtn" id="bFullStop" type="button" hidden>■ Atura i desa</button>
+      <button class="sbtn" id="bFullPlay" type="button" hidden>▶ Escolta’t sencera amb la base</button>
+      <span class="stat-l" id="fullInfo">Et grava de seguit amb la base. Atura quan vulguis (Esc): les frases que hagis cantat queden amb la seva presa.</span>
+      <ul class="tlist full-list" id="fullList" hidden></ul>
+    </div>
     <div class="song-tools adv-only">
       <button class="sbtn" id="bPlaySong" type="button">▶ Des del cursor</button>
       <span class="stat-l" id="rhythmV"></span>
@@ -370,7 +420,9 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </details>
     </div>
   </section>
+  </section>
 
+  <section class="view" id="vSing">
   <section class="work" id="work">
     <aside class="panel phrases" aria-label="Frases">
       <h2>Frases <span class="mono stat-l" id="nPhr"></span></h2>
@@ -379,14 +431,13 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     </aside>
 
     <div class="desk">
-      <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+      <div class="panel desk-top">
         <div class="desk-head">
-          <div>
-            <div class="eyebrow">Frase</div>
+          <div class="desk-id">
             <h2 id="pTitle">—</h2>
             <p class="meta mono" id="pTime"></p>
-            <p class="pline"><input id="pLyr" type="text" placeholder="Títol de la frase (per exemple, la lletra)" aria-label="Títol de la frase"></p>
           </div>
+          <p class="pline"><input id="pLyr" type="text" placeholder="Títol de la frase (per exemple, la lletra)" aria-label="Títol de la frase"></p>
           <div class="nudges adv-only">
             <div class="group"><button class="sbtn" id="bPrev" type="button" aria-label="Frase anterior">←</button><button class="sbtn" id="bNext" type="button" aria-label="Frase següent">→</button></div>
             <div class="group">Inici <button class="sbtn" data-n="s,-0.1" type="button">−</button><button class="sbtn" data-n="s,0.1" type="button">+</button></div>
@@ -401,15 +452,13 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
         <div class="opts">
           <label for="oTimes" class="adv-only">Escoltes al cicle <select id="oTimes"><option selected>1</option><option>2</option><option>3</option></select></label>
           <label for="oBack" class="adv-only">Mentre cantes sona <select id="oBack"><option value="guide" selected>la base + veu guia fluixa</option><option value="base">la base (sense veu)</option><option value="none">res (a cappella)</option></select></label>
-          <label for="oKey">To <select id="oKey"><option value="-6">−6 semitons</option><option value="-5">−5</option><option value="-4">−4</option><option value="-3">−3</option><option value="-2">−2</option><option value="-1">−1 (una mica més greu)</option><option value="0" selected>original</option><option value="1">+1 (una mica més agut)</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6 semitons</option></select></label>
-          <label for="oRate">Velocitat <select id="oRate"><option value="1" selected>normal</option><option value="0.85">85 %</option><option value="0.7">70 %</option><option value="0.55">55 %</option></select></label>
           <label for="oPre" class="adv-only">Entrada <select id="oPre"><option value="0">entra directament</option><option value="1" selected>1 compàs d’entrada</option><option value="2">2 compassos d’entrada</option></select></label>
           <span class="meter adv-only"><button class="sbtn" id="bMic" type="button">Prova el micròfon</button><span class="meter-bar"><i id="meterI"></i></span></span>
         </div>
         <div class="status" id="status" aria-live="polite"></div>
       </div>
 
-      <div class="panel">
+      <div class="panel cmp-panel">
         <div class="cmp-head">
           <h3>Comparació</h3>
           <label class="level adv-only" for="oLevel">Nivell <select id="oLevel"><option value="easy" selected>Fàcil</option><option value="mid">Mitjà</option><option value="hard">Exigent</option></select></label>
@@ -436,14 +485,15 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
         </div>
       </div>
 
-      <div class="panel">
-        <h3 style="font-size:16px">Preses d'aquesta frase</h3>
+      <div class="panel takes-panel">
+        <h3>Preses <span class="stat-l simple-only">cada vegada que cantes la frase es guarda aquí; clica’n una per veure-la i escoltar-la</span></h3>
         <ul class="tlist" id="tlist"></ul>
-      <p class="help-s simple-only">Cada vegada que cantes la frase es guarda aquí. Clica’n una per veure-la i escoltar-la.</p>
       </div>
     </div>
   </section>
+  </section>
 
+  <section class="view" id="vRange">
   <section class="panel range" id="rangePanel" aria-label="Rang vocal" hidden>
     <div class="range-head">
       <div>
@@ -481,21 +531,38 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </div>
     </div>
   </section>
+  </section>
 
+  <section class="view" id="vHelp">
   <section class="panel help simple-only">
     <h3>Com funciona</h3>
-    <p><b>1.</b> Tria una cançó. <b>2.</b> Espera que el programa en separi la veu. <b>3.</b> Tria una frase, prem <b>Escolta</b> per sentir-la i <b>Canta-la</b> per cantar-la amb la música. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
+    <p><b>1.</b> Tria una cançó (pestanya <b>Cançó</b>). <b>2.</b> Espera que el programa en separi la veu. <b>3.</b> A la pestanya <b>Canta</b>, tria una frase, prem <b>Escolta</b> per sentir-la i <b>Canta-la</b> per cantar-la amb la música. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
   </section>
   <section class="panel help adv-only">
     <h3>Com funciona</h3>
-    <p><b>1. Carrega una cançó</b> (MP3, WAV, M4A). <b>2. Separa la veu</b>: el programa fa servir Demucs, un model obert, dins del teu navegador; la cançó no surt del teu ordinador. <b>3. Treballa frase a frase</b>: les frases i la melodia es treuen només de la pista de veu. Escolta la frase, repeteix-la cantant sobre la base i mira quines notes has encertat.</p>
-    <p><b>To i velocitat.</b> Pots pujar o baixar el to de tota la cançó fins a 6 semitons perquè vagi bé a la teva veu (les notes de l’original es desplacen igual), i escoltar i cantar la frase més lenta (85, 70 o 55 %) sense que canviï el to. La comparació ho té en compte, i cada presa recorda amb quin to i velocitat es va cantar. La cançó sencera va a velocitat normal.</p>
-    <p><b>El teu rang vocal.</b> A sota de tot hi ha una prova curta: el programa agafa la frase més aguda de la cançó i la va pujant de dos en dos semitons: cada cop la sents i després la cantes sobre la base, i el programa mira si has arribat a la nota més aguda (en l’octava que cantis) i si la frase ha sortit afinada. Quan no hi arribes, prova el semitò del mig. Pots corregir-lo amb els botons si no estàs d’acord. Després fa el mateix cap avall amb la frase més greu. Amb el resultat et diu entre quines notes et va bé cantar i quin to et convé per a aquesta cançó, i te’l pot posar directament. El rang es desa amb la sessió.</p>
+    <p><b>1. Carrega una cançó</b> (MP3, WAV, M4A). <b>2. Separa la veu</b>: el programa fa servir Demucs, un model obert, dins del teu navegador; la cançó no surt del teu ordinador. A la pestanya <b>Cançó</b> hi tens la forma d’ona per retocar les frases i la gravació de la cançó sencera. <b>3. Treballa frase a frase</b> a la pestanya <b>Canta</b>: les frases i la melodia es treuen només de la pista de veu. Escolta la frase, repeteix-la cantant sobre la base i mira quines notes has encertat.</p>
+    <p><b>To i velocitat</b> (a la barra de sota, valen per a tot). Pots pujar o baixar el to de tota la cançó fins a 6 semitons perquè vagi bé a la teva veu (les notes de l’original es desplacen igual), i escoltar i cantar la frase més lenta (85, 70 o 55 %) sense que canviï el to. La comparació ho té en compte, i cada presa recorda amb quin to i velocitat es va cantar. La cançó sencera va a velocitat normal.</p>
+    <p><b>El teu rang vocal.</b> A la pestanya «Rang vocal» hi ha una prova curta: el programa agafa la frase més aguda de la cançó i la va pujant de dos en dos semitons: cada cop la sents i després la cantes sobre la base, i el programa mira si has arribat a la nota més aguda (en l’octava que cantis) i si la frase ha sortit afinada. Quan no hi arribes, prova el semitò del mig. Pots corregir-lo amb els botons si no estàs d’acord. Després fa el mateix cap avall amb la frase més greu. Amb el resultat et diu entre quines notes et va bé cantar i quin to et convé per a aquesta cançó, i te’l pot posar directament. El rang es desa amb la sessió.</p>
     <p><b>Canta amb auriculars.</b> Si la base surt pels altaveus, el micròfon també la grava i la comparació es confon. Amb auriculars Bluetooth, grava amb el micròfon de l’ordinador, no amb el dels auriculars: el retard es corregeix sol en acabar la presa.</p>
     <p><b>A la comparació,</b> clica una barra de nota per sentir aquella nota: primer l’original i després tu. Clica en un espai buit per triar des d’on sona la reproducció (l’original, tu o les dues); doble clic per tornar al principi. Els dos volums («La teva veu» i «Base») valen per a totes les escoltes de la teva veu i es poden moure mentre sona. La reverb només s’aplica en escoltar-te; el WAV que descarregues és la veu neta.</p>
     <p><b>Dreceres:</b> <kbd>Espai</kbd> escolta · <kbd>R</kbd> repeteix · <kbd>Intro</kbd> cicle · <kbd>←</kbd> <kbd>→</kbd> frase anterior/següent · <kbd>Esc</kbd> atura. Les preses es guarden només mentre la pàgina està oberta; descarrega-les en WAV si les vols conservar.</p>
   </section>
   <p class="credit">Mirall de veu és una eina de <a href="https://rockin.cat" target="_blank" rel="noopener">Rockin</a>. Separació de veu amb Demucs (Meta AI, llicència MIT) a través de demucs-web.</p>
+  </section>
+  </main>
+
+  <footer class="statusbar">
+    <div class="sb-song"><b id="sbName">Cap cançó</b><span class="mono stat-l" id="sbMeta"></span></div>
+      <div class="group transport" role="group" aria-label="Què sona" id="mixPresets">
+        <button class="sbtn" type="button" data-mix="1,1">▶ Cançó</button><button class="sbtn adv-only" type="button" data-mix="1,0">▶ Només veu</button><button class="sbtn adv-only" type="button" data-mix="0,1">▶ Només base</button>
+        <button class="sbtn" id="bStop" type="button">■ Atura <kbd>Esc</kbd></button>
+        <span class="clock mono" id="clock">0:00.0</span>
+      </div>
+    <div class="group sb-opts">
+          <label for="oKey">To <select id="oKey"><option value="-6">−6 semitons</option><option value="-5">−5</option><option value="-4">−4</option><option value="-3">−3</option><option value="-2">−2</option><option value="-1">−1 (una mica més greu)</option><option value="0" selected>original</option><option value="1">+1 (una mica més agut)</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6 semitons</option></select></label>
+          <label for="oRate">Velocitat <select id="oRate"><option value="1" selected>normal</option><option value="0.85">85 %</option><option value="0.7">70 %</option><option value="0.55">55 %</option></select></label>
+    </div>
+  </footer>
 </div>
 <div id="toast" role="status"></div>
 
@@ -894,13 +961,32 @@ async function resumeSession(sess){
     $('#work').hidden=!(S.stem||S.approx);$('#fullRow').hidden=!(S.stem||S.approx);$('#rangePanel').hidden=!(S.stem||S.approx);
     S.range=sess.range||null;rangeReset();
     renderAll();renderSep();renderFullTakes();
+    setTabs();showView('sing');
     toast('Sessió recuperada: '+S.phrases.length+' frases.');
     if(sess.opts&&sess.opts.semis)setKey(sess.opts.semis);
   }catch(e){console.error(e);b.disabled=false;b.textContent='No he pogut recuperar la sessió anterior ('+errMsg(e)+').'}
 }
 
 /* ---------- start screen and drag & drop ---------- */
-function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;$('#bExport').hidden=!has||S.demo;if(!has){$('#work').hidden=true;$('#rangePanel').hidden=true}}
+function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPanel').hidden=!has;$('#bExport').hidden=!has||S.demo;if(!has){$('#work').hidden=true;$('#rangePanel').hidden=true}$('#sbName').textContent=has?S.name:'Cap cançó';$('#sbMeta').textContent='';setTabs()}
+/* ---------- views (tabs) ---------- */
+let VIEW='song';
+const viewReady=v=>v==='song'||v==='help'||!!(S.mix&&(S.stem||S.approx));
+function setTabs(){document.querySelectorAll('.tab').forEach(b=>b.disabled=!viewReady(b.dataset.view));if(!viewReady(VIEW))showView('song')}
+function showView(v){
+  if(!viewReady(v))v='song';VIEW=v;
+  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v'+v[0].toUpperCase()+v.slice(1)));
+  document.querySelectorAll('.tab').forEach(b=>{b.classList.toggle('on',b.dataset.view===v);b.setAttribute('aria-current',b.dataset.view===v?'page':'false')});
+  redrawView();
+}
+function redrawView(){
+  if(!S.mix)return;
+  if(VIEW==='song'){S.peaks=null;S.vpeaks=null;S.mpeaks=null;drawSongStatic();drawSong();drawMini()}
+  else if(VIEW==='sing')drawCompare();
+  else if(VIEW==='range'&&S.range&&!$('#rRes').hidden)drawRangeKeys(S.range,songRangeFor(S.range));
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+window.addEventListener('resize',redrawView);
 /* ---------- robust audio decoding: sniff the real container, strip tags, skip junk, and fall back to a WASM MP3 decoder ---------- */
 function sniffAudio(u8){
   const s4=String.fromCharCode(...u8.subarray(0,4)),s8=String.fromCharCode(...u8.subarray(4,12));
@@ -995,8 +1081,10 @@ function loadSong(keepPhrases){
     :S.approx?(S.mono?'Fitxer mono sense separar: la veu guia és la cançó sencera. Les frases poden incloure trossos instrumentals i la melodia serà poc fiable.':'Sense separar: la veu guia és el centre de l’estèreo i la base, els laterals. Les frases poden incloure trossos instrumentals i la melodia serà menys fiable.')
     :'';
   $('#sepNote').textContent=note;$('#sepNote').hidden=!note;
+  $('#sbName').textContent=S.name;$('#sbMeta').textContent=fmt(dur);
   renderSep();
   renderAll();
+  setTabs();if(ready&&!keepPhrases&&!S.demo)showView('sing');else if(!ready)showView('song');
 }
 $('#fMix').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';loadMixFile(f)});
 $('#fStem').addEventListener('change',async e=>{
@@ -1469,7 +1557,7 @@ function segmentShifted(s,e,gv,ga,semis){
   shiftCache.set(key,out);return out;
 }
 const RG={on:false,dir:0,pick:null,cur:0,yes:null,no:null,up:null,down:null,asked:0};
-function rangeReset(){RG.on=false;$('#rStep').hidden=true;$('#rStart').hidden=false;$('#rIntro').hidden=false;const has=!!S.range;$('#rRes').hidden=!has;if(has)renderRangeResult()}
+function rangeReset(){RG.on=false;$('#rStep').hidden=true;const has=!!S.range;$('#rStart').hidden=has;$('#rIntro').hidden=false;$('#rRes').hidden=!has;if(has)renderRangeResult()}
 async function rangeStart(){
   if(!S.phrases.length)return toast('Primer calen frases detectades.');
   const hiP=pickPhrase(1),loP=pickPhrase(-1);
@@ -1607,14 +1695,14 @@ function bestKey(song,rg){
     if(ex<be-1e-9||(Math.abs(ex-be)<1e-9&&dd<bd)){be=ex;bd=dd;best=t}}
   return{t:best,excess:be};
 }
+// the song's range in the singer's octave: a boy singing a woman's song an octave down is "inside" if the shifted song fits
+function songRangeFor(rg){const song=songRange();if(!song)return null;const oct=Math.round(((rg.lo+rg.hi)/2-(song.lo+song.hi)/2)/12)*12;return oct?{lo:song.lo+oct,hi:song.hi+oct,oct}:song}
 function renderRangeResult(){
   const rg=S.range;if(!rg)return;
   const span=rg.hi-rg.lo,oct=span>=24?'dues octaves':span>=19?'una octava i mitja':span>=12?'més d’una octava':span>=7?'més de mitja octava':'poc més de mitja octava';
   $('#rResT').innerHTML='Et va bé cantar entre <b>'+noteName(rg.lo)+'</b> i <b>'+noteName(rg.hi)+'</b> <span class="stat-l" style="font-family:var(--body);font-size:14px">('+span+' semitons, '+oct+')</span>';
-  let song=songRange();const ap=$('#rApply');let msg='';
+  const song=songRangeFor(rg),ap=$('#rApply');let msg='';
   if(song){
-    // compare in the singer's octave: a boy singing a woman's song an octave down is "inside" if the shifted song fits
-    const oct=Math.round(((rg.lo+rg.hi)/2-(song.lo+song.hi)/2)/12)*12;if(oct)song={lo:song.lo+oct,hi:song.hi+oct,oct};
     const bk=bestKey(song,rg),fits0=song.lo>=rg.lo&&song.hi<=rg.hi;
     msg='Aquesta cançó va de '+noteName(song.lo)+' a '+noteName(song.hi)+(song.oct?' (a la teva octava)':'')+'. ';
     if(fits0&&bk.t===0)msg+='Al to original ja et va bé: tota la cançó queda dins del teu rang.';
@@ -1653,7 +1741,6 @@ $('#rPlay').addEventListener('click',rangePlay);
 $('#rRetry').addEventListener('click',rangeCycle);
 $('#rStop').addEventListener('click',rangeStop);
 $('#rQuit').addEventListener('click',()=>{cancel();rec.active=false;S.recInfo=null;S.live=null;rangeReset()});
-window.addEventListener('resize',()=>{if(S.range&&!$('#rRes').hidden)drawRangeKeys(S.range,songRange())});
 
 /* ---------- full-song recording: sing it through with the base; phrases get their takes afterwards ---------- */
 let fullRec=null;
