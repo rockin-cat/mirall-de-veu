@@ -80,7 +80,7 @@ button,select,input{font:inherit;color:inherit}
 .topbar .brand span{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .loaders{margin-left:auto;display:flex;gap:8px}
 .topbar .btn.ghost{border-color:var(--rk-tinta);color:var(--rk-tinta)}
-@media (max-width:1180px){.topbar .brand span{display:none}.topbar .btn{padding:6px 10px;font-size:13px}.tab{padding:7px 10px;font-size:13px}}
+@media (max-width:1180px){.topbar .rk-sep,.topbar .rk-eina{display:none}.topbar .btn{padding:6px 10px;font-size:13px}.tab{padding:7px 10px;font-size:13px}}
 @media (max-width:560px){.topbar .brand img{height:30px}}
 .start{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:48px 24px;border:2px dashed var(--rk-groc);background:#FFF7DC;flex:1}
 .start.over{background:var(--you-soft);border-color:var(--you)}
@@ -224,7 +224,7 @@ details.detect summary{cursor:pointer;color:var(--muted);font-weight:700}
 .cmp-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;margin-bottom:6px;flex:none}
 .level{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-right:auto}
 .verdict{display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;margin-top:8px}
-.stars{font-size:34px;letter-spacing:4px;line-height:1;color:#FFC83D;text-shadow:0 0 10px rgba(255,200,61,.45)}
+.stars{font-size:34px;letter-spacing:4px;line-height:1;color:#FFC83D}
 .stars .off{color:var(--line);text-shadow:none}
 .verdict-t{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.1}
 .verdict-s{font-size:14px;color:var(--muted);max-width:60ch}
@@ -234,8 +234,8 @@ details.detect summary{cursor:pointer;color:var(--muted);font-weight:700}
 .cmp-head h3{font-size:18px}
 .legend{display:flex;gap:14px;font-size:13px;color:var(--muted);align-items:center}
 .legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
-.legend .r{background:#4A4442;border:1.5px solid #9A928E;height:10px;border-radius:5px} .legend .y{background:#FF8A4C} .legend .h{background:#FDBE10;height:10px;border-radius:5px;box-shadow:0 0 6px rgba(253,190,16,.8)}
-.cv-wrap{flex:none;height:300px;border-radius:10px;background:#221F20;overflow:hidden}
+.legend .r{background:#e7e3db;border:1.5px solid #8a857c;height:10px;border-radius:5px} .legend .y{background:#FF8A4C} .legend .h{background:#FDBE10;height:10px;border-radius:5px}
+.cv-wrap{flex:none;height:300px;border-radius:10px;background:#fbfaf7;border:1px solid var(--line,#e3ded4);overflow:hidden}
 #cvCmp{width:100%;height:100%;display:block}
 .stats{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:8px;align-items:baseline}
 #stats{margin-top:0;flex:none}
@@ -296,11 +296,16 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   .cv-wrap{height:230px}
 }
 </style>
+<link rel="stylesheet" href="/marca/capcalera.css">
 </head>
 <body>
 <div class="wrap">
-  <header class="topbar">
-    <a class="brand" href="https://rockin.cat" target="_blank" rel="noopener"><img src="rockin-logo.svg" alt="Rockin" onerror="this.outerHTML='&lt;b style=&quot;font-family:Lora,serif;font-size:30px;letter-spacing:.02em&quot;&gt;ROCKIN&lt;/b&gt;'"><span>Mirall de veu</span></a>
+  <header class="topbar rk-cap rk-amb-controls">
+    <div class="rk-marca">
+      <a class="rk-totes" href="/" title="Totes les eines Rockin"><img class="rk-logo" src="/marca/rockin-logo-fosc.png" alt="Rockin" width="382" height="72"></a>
+      <span class="rk-sep" aria-hidden="true"></span>
+      <span class="rk-eina">Mirall de veu</span>
+    </div>
     <nav class="tabs" aria-label="Seccions">
       <button class="tab on" type="button" data-view="song">Cançó</button>
       <button class="tab" type="button" data-view="sing" disabled>Canta</button>
@@ -1952,8 +1957,8 @@ function drawMini(){
   g.strokeStyle=tok('--ink');g.lineWidth=1.5;g.strokeRect(X(V.v0)+.75,.75,Math.max(2,X(V.v1)-X(V.v0))-1.5,h-1.5);
 }
 /* SingStar-style stage: the original as note bars, your voice as a line that lights up on the right note */
-const STAGE={bg1:'#221F20',bg2:'#36312F',grid:'rgba(255,255,255,.07)',gridC:'rgba(253,190,16,.25)',label:'rgba(255,255,255,.5)',
-  bar:'rgba(255,255,255,.14)',barLine:'rgba(255,255,255,.6)',hit:'#FDBE10',hitGlow:'rgba(253,190,16,.7)',you:'#FF8A4C',head:'rgba(255,255,255,.9)'};
+const STAGE={bg1:'#f6f3ec',bg2:'#fbfaf7',grid:'rgba(31,30,28,.07)',gridC:'rgba(200,140,0,.35)',label:'rgba(31,30,28,.55)',
+  bar:'rgba(31,30,28,.10)',barLine:'rgba(31,30,28,.45)',hit:'#FDBE10',hitGlow:'rgba(253,190,16,.7)',you:'#e8632a',head:'rgba(31,30,28,.85)'};
 function noteSeg(tr){
   if(tr.notes)return tr.notes;
   const notes=[],hop=tr.hop;let cur=null;
@@ -2044,14 +2049,14 @@ function drawCompare(){
       if(isNaN(a.m)||isNaN(b.m)||b.t-a.t>0.08||b.t<0||a.t>T||Math.abs(b.m-a.m)>2)continue;
       const good=onNote(a)&&onNote(b);
       g.beginPath();g.moveTo(X(a.t),Y(a.m));g.lineTo(X(b.t),Y(b.m));
-      if(good){g.save();g.shadowColor=STAGE.hitGlow;g.shadowBlur=10;g.strokeStyle='#FFF1BF';g.lineWidth=Math.max(4,bh*0.42);g.stroke();g.restore()}
+      if(good){g.save();g.shadowColor=STAGE.hitGlow;g.shadowBlur=10;g.strokeStyle='#d99a00';g.lineWidth=Math.max(4,bh*0.42);g.stroke();g.restore()}
       else{g.strokeStyle=STAGE.you;g.lineWidth=3.2;g.stroke()}
     }
   }
   S.cmpGeom={padL,padR,T,w,top,pH,lo,hi,bh,notes};
   if(S.noteHover!=null&&notes[S.noteHover]){const n=notes[S.noteHover],x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2;g.save();g.strokeStyle=STAGE.head;g.lineWidth=2;rrect(g,x0-2,y-2,Math.max(4,x1-x0)+4,bh+4,(bh+4)/2);g.stroke();g.restore()}
   if(S.notePlay&&notes[S.notePlay.i]){const n=notes[S.notePlay.i],x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2;g.save();g.shadowColor=S.notePlay.who==='you'?STAGE.you:STAGE.hitGlow;g.shadowBlur=22;g.strokeStyle=S.notePlay.who==='you'?STAGE.you:'#FFF4C2';g.lineWidth=3;rrect(g,x0-2,y-2,Math.max(4,x1-x0)+4,bh+4,(bh+4)/2);g.stroke();g.restore()}
-  if(ph.lyr){g.font='700 15px '+tok('--display');g.textBaseline='top';g.fillStyle='rgba(255,255,255,.9)';g.fillText(ph.lyr.length>90?ph.lyr.slice(0,88)+'…':ph.lyr,padL,top+2)}
+  if(ph.lyr){g.font='700 15px '+tok('--display');g.textBaseline='top';g.fillStyle='rgba(31,30,28,.85)';g.fillText(ph.lyr.length>90?ph.lyr.slice(0,88)+'…':ph.lyr,padL,top+2)}
   // chosen start point
   if(S.cmpCursor!=null&&S.cmpCursor<=T){const x=X(S.cmpCursor);g.save();g.setLineDash([4,4]);g.strokeStyle=STAGE.head;g.lineWidth=1.5;g.beginPath();g.moveTo(x,top);g.lineTo(x,top+pH);g.stroke();g.restore();
     g.fillStyle=STAGE.head;g.beginPath();g.moveTo(x-6,top+pH);g.lineTo(x+6,top+pH);g.lineTo(x,top+pH-8);g.fill()}
