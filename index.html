@@ -45,10 +45,51 @@ body.simple .tab[data-view="song"].ready{display:none}
 .edit-on #cvCmp{cursor:crosshair}
 .editbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
 .editbar .hint{color:var(--muted)}
-body.simple .takes-panel{display:none!important}
-body.simple .phrases{display:none!important}
-body.simple .work{grid-template-columns:minmax(0,1fr)}
-body.simple .desk-head h2{font-size:24px}
+/* ---- student flow: one action per screen, the loop runs on its own ---- */
+body.simple .work{display:none!important}
+body.simple .tabs,body.simple #bMode,body.simple #bExport,body.simple .loaders>label[for="fMix"],body.simple .statusbar{display:none!important}
+.student{display:none;flex:1;min-height:0;flex-direction:column;gap:14px}
+body.simple .student{display:flex}
+.st-top{display:flex;align-items:center;gap:14px}
+.st-prog{flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.st-prog i{display:block;height:100%;background:var(--rk-groc);width:0;transition:width .3s}
+.st-head{display:flex;align-items:baseline;gap:16px;min-height:50px;flex-wrap:wrap}
+.st-head h1{font-family:var(--display);font-size:40px;margin:0;line-height:1}
+.st-head h1 small{font-size:20px;color:var(--muted);font-weight:600}
+.st-lyr{font-size:20px;color:#4d4843}
+.pill{display:inline-flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:19px;padding:10px 16px;border-radius:999px;align-self:center}
+.pill.listen{background:var(--good)}.pill.rec{background:var(--you)}.pill.wait{background:#8a8580}
+.pill i{display:block;width:12px;height:12px;border-radius:50%;background:#fff}
+.st-res{font-family:var(--display);font-size:44px;font-weight:700;line-height:1}
+.st-res em{font-style:normal}
+.st-tip{font-size:21px;color:#4d4843}
+.st-stage{flex:1;min-height:180px;display:flex;flex-direction:column}
+.st-stage .cv-wrap{flex:1;height:auto;min-height:180px;border-radius:16px}
+.st-cap{text-align:center;color:var(--muted);font-size:16px;margin:0;min-height:22px}
+.st-actions{display:flex;align-items:center;justify-content:center;gap:22px;min-height:78px;flex-wrap:wrap}
+.bigbtn{border:0;background:var(--rk-groc);color:var(--ink);font:700 24px/1 var(--body);padding:22px 52px;border-radius:16px;cursor:pointer;box-shadow:0 4px 0 #c99300;display:inline-flex;align-items:center;gap:12px}
+.bigbtn:active{transform:translateY(2px);box-shadow:0 2px 0 #c99300}
+.midbtn{border:1.5px solid var(--line);background:var(--panel);font:500 17px/1 var(--body);padding:14px 24px;border-radius:12px;cursor:pointer;color:var(--ink)}
+.midbtn:hover{border-color:var(--muted)}
+.st-cd{display:inline-flex;align-items:center;gap:12px;color:var(--muted);font-size:17px}
+.st-cd b{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:3px solid var(--rk-groc);color:var(--ink);font-family:var(--mono)}
+.st-final{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;text-align:center}
+.st-final h1{font-family:var(--display);font-size:40px;margin:0}
+.st-final p{margin:0;font-size:19px;color:#4d4843}
+.st-bars{display:grid;gap:10px;width:min(980px,100%);align-items:end;height:180px}
+.st-bars button{border:0;border-radius:8px 8px 4px 4px;cursor:pointer;background:var(--rk-groc);min-height:8px}
+.st-bars button.weak{background:var(--line)}
+.st-nums{display:grid;gap:10px;width:min(980px,100%);text-align:center;font-size:13px;color:var(--muted);margin-top:-14px}
+.st-back{align-self:flex-start}
+.gear{position:relative;display:flex;align-items:center;gap:12px}
+.gear>span{font-size:14px;font-weight:500;opacity:.85;max-width:32ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gear>button{border:0;background:transparent;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--rk-tinta)}
+.gear>button:hover{background:rgba(34,31,32,.08)}
+.pop{position:absolute;right:0;top:46px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:280px;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,.12);font-size:14px}
+.pop label{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--ink)}
+.pop .sb-opts{margin:0;flex-direction:column;align-items:stretch;gap:10px}
+.pop hr{border:0;border-top:1px solid var(--line);margin:2px 0}
+.pop .sbtn{text-align:left}
 body.simple .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
 body.simple .step b{font-size:21px}
 body.simple .pbtn{padding:10px 8px}
@@ -111,6 +152,7 @@ button,select,input{font:inherit;color:inherit}
 .start-t{font-size:34px}
 .start-s{margin:0;max-width:52ch;color:var(--muted);font-size:15px}
 .start-s.small{font-size:13px}
+.linkbtn{border:0;background:none;color:var(--muted);text-decoration:underline;cursor:pointer;font:14px var(--body)}
 .start-btn{font-size:17px;padding:12px 22px;margin-top:6px}
 .loaders{display:flex;flex-wrap:wrap;gap:8px}
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ink);background:var(--ink);color:var(--rk-groc);border-radius:6px;padding:7px 14px;cursor:pointer;font-weight:700;line-height:1.2}
@@ -342,6 +384,20 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       <button class="btn ghost" id="bExport" type="button" title="Desa la cançó, la veu separada, les frases i les preses en un fitxer .mirall" hidden>Desa la sessió</button>
       <label class="btn" for="fMix">Carrega una cançó</label>
       <input type="file" id="fMix" accept="audio/*" class="vh">
+      <div class="gear simple-only">
+        <span id="tbSong"></span>
+        <button type="button" id="bGear" aria-label="Opcions" aria-expanded="false" title="Opcions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+        <div class="pop" id="gearPop" hidden>
+          <div id="gearOpts"></div>
+          <label for="oAdvance">Passa de frase <select id="oAdvance"><option value="auto" selected>sola, al cap de 3 s</option><option value="manual">quan premo «Següent»</option></select></label>
+          <hr>
+          <button class="sbtn" type="button" data-go="range">Troba el teu rang vocal</button>
+          <button class="sbtn" type="button" data-go="help">Ajuda</button>
+          <button class="sbtn" type="button" id="bExport2">Desa la sessió (.mirall)</button>
+          <hr>
+          <button class="sbtn" type="button" id="gearTeacher">Soc professorat: prepara cançons</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -349,13 +405,11 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   <section class="view on" id="vSong">
   <section class="panel start" id="startPanel" aria-label="Comença">
     <div class="simple-only" style="display:contents">
-      <div class="eyebrow">Comença</div>
-      <h1 class="start-t">Obre la cançó que t’ha passat el professorat</h1>
-      <p class="start-s">És un fitxer <b>.mirall</b> amb la cançó ja preparada: la veu separada i les frases marcades. Després, frase a frase: l’escoltes, la cantes i et veus al costat de l’original.</p>
-      <label class="btn start-btn" for="fSess">Obre la sessió (.mirall)</label>
+      <h1 class="start-t">Obre la cançó</h1>
+      <p class="start-s">El fitxer que t’ha passat el professorat (acaba en <b>.mirall</b>). També el pots arrossegar aquí.</p>
+      <label class="btn start-btn" for="fSess">Tria el fitxer</label>
       <button class="sbtn" id="bResume" type="button" hidden></button>
-      <label class="sbtn" for="fMix">O carrega una cançó (MP3, WAV, M4A) i prepara-la tu</label>
-      <p class="start-s small">O arrossega el fitxer aquí. El que cantis es desa en aquest navegador fins que tornis.</p>
+      <button class="linkbtn" id="bPrepMine" type="button">Vull carregar una cançó nova (MP3) i preparar-la jo</button>
     </div>
     <div class="adv-only" style="display:contents">
       <div class="eyebrow">Pas 1</div>
@@ -483,12 +537,6 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
 
     <div class="desk">
       <div class="panel desk-top">
-        <div class="snav simple-only">
-          <button class="btn ghost" id="sPrev" type="button">← Anterior</button>
-          <div class="sdots" id="sdots" aria-label="Frases"></div>
-          <span class="stat-l" id="sProg"></span>
-          <button class="btn" id="sNext" type="button">Següent →</button>
-        </div>
         <div class="desk-head">
           <div class="desk-id">
             <h2 id="pTitle">—</h2>
@@ -554,9 +602,18 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </div>
     </div>
   </section>
+  <section class="student simple-only" id="student" aria-label="Canta">
+    <div class="st-top"><div class="st-prog"><i id="stFill"></i></div><span class="stat-l" id="stCount"></span></div>
+    <div class="st-head" id="stHead"></div>
+    <div class="st-stage" id="stStage"></div>
+    <p class="st-cap" id="stCap"></p>
+    <div class="st-final" id="stFinal" hidden></div>
+    <div class="st-actions" id="stActions"></div>
+  </section>
   </section>
 
   <section class="view" id="vRange">
+  <button class="sbtn simple-only st-back" type="button" data-go="sing">← Torna a cantar</button>
   <section class="panel range" id="rangePanel" aria-label="Rang vocal" hidden>
     <div class="range-head">
       <div>
@@ -597,9 +654,10 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   </section>
 
   <section class="view" id="vHelp">
+  <button class="sbtn simple-only st-back" type="button" data-go="sing">← Torna a cantar</button>
   <section class="panel help simple-only">
     <h3>Com funciona</h3>
-    <p><b>1.</b> Obre la sessió (.mirall) que t’ha passat el professorat. <b>2.</b> Prem <b>Escolta</b> per sentir la frase i <b>Canta-la</b> per cantar-la amb la música. <b>3.</b> Mira com ha anat i passa a la següent amb <b>Següent →</b>. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
+    <p><b>1.</b> Obre la cançó (el fitxer .mirall que t’ha passat el professorat). <b>2.</b> Prem <b>Comença</b>: sents la frase, la cantes quan entra la música, veus com ha anat i, al cap de 3 segons, passa a la següent. Si una frase surt fluixa, la repeteix una vegada. <b>3.</b> Prem <b>Pausa</b> quan vulguis parar, tornar-hi o escoltar-te. Al final veuràs quines frases et convé repassar. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
   </section>
   <section class="panel help adv-only">
     <h3>Com funciona</h3>
@@ -1298,6 +1356,7 @@ function loadSong(keepPhrases){
   renderAll();
   setTabs();if(ready&&!keepPhrases&&!S.demo)showView('sing');else if(!ready)showView('song');
   if(S.stem&&!S.demo&&!(S.nn&&S.nnFor===S.stem)){S.nn=null;nnSongPass({redetect:!keepPhrases})}
+  FL.token++;FL.state='idle';FL.queue=null;FL.repeated=false;renderStudent();
 }
 $('#fMix').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';loadMixFile(f)});
 $('#fStem').addEventListener('change',async e=>{
@@ -1635,6 +1694,7 @@ function cancel(){runId++;if(fullRec){fullStop();return}stopAll();S.notePlay=nul
 function waitUntil(t,id){return new Promise(res=>{const f=()=>{if(id!==runId)return res(false);if(ac().currentTime>=t)return res(true);setTimeout(f,25)};f()})}
 function setStatus(html){$('#status').innerHTML=html}
 function setPhase(name,html){
+  S.phase=name;if(FL.state==='running'&&studentOn())renderStudent();
   ['bListen','bRec','bCycle'].forEach(id=>$('#'+id).classList.remove('active'));
   if(name==='listen')$('#bListen').classList.add('active');
   if(name==='rec')$('#bRec').classList.add('active');
@@ -2010,6 +2070,7 @@ async function fullStop(){
   const scored=S.phrases.filter(p=>p.takes.length&&p.takes[p.takes.length-1].score!=null),avg=scored.length?Math.round(scored.reduce((a,p)=>a+p.takes[p.takes.length-1].score,0)/scored.length):null;
   $('#fullInfo').textContent='Desat: '+made+(made===1?' frase':' frases')+' amb presa.'+(avg!=null?' Mitjana de notes encertades: '+avg+' %.':'')+' Clica una frase per veure-la nota a nota.';
   toast('Cançó sencera gravada: '+made+' frases.');
+  if(FL.state==='full'){FL.state='final';renderStudent()}
 }
 async function fullPlay(ft){
   ft=ft||S.fullTake;if(!ft)return;cancel();S.fullTake=ft;renderFullTakes();
@@ -2312,18 +2373,8 @@ function renderPhrases(){
   }).join('');
   const sel=$('#plist .sel');if(sel)sel.scrollIntoView({block:'nearest',inline:'nearest'});
 }
-function renderSnav(){
-  const n=S.phrases.length,i=S.cur;
-  $('#sPrev').disabled=i<=0;$('#sNext').disabled=i>=n-1;
-  $('#sdots').innerHTML=S.phrases.map((p,k)=>'<i class="'+(p.takes.length?'done ':'')+(k===i?'cur':'')+'" data-i="'+k+'" title="Frase '+(k+1)+(p.lyr?' · '+p.lyr:'')+'"></i>').join('');
-  const done=S.phrases.filter(p=>p.takes.length).length;
-  $('#sProg').textContent=n?('Frase '+(i+1)+' de '+n+(done?' · '+done+' cantad'+(done===1?'a':'es'):'')):'';
-}
-$('#sPrev').addEventListener('click',()=>{cancel();select(S.cur-1)});
-$('#sNext').addEventListener('click',()=>{cancel();select(S.cur+1)});
-$('#sdots').addEventListener('click',e=>{const d=e.target.closest('i');if(d){cancel();select(+d.dataset.i)}});
 function renderDesk(){
-  renderSnav();
+  renderStudent();
   const ph=curPh();
   $('#pTitle').textContent=ph?(S.cur+1)+' de '+S.phrases.length:'Cap frase';
   $('#pTime').textContent=ph?fmt(ph.start)+' – '+fmt(ph.end)+' · '+dec(ph.end-ph.start)+' s':'Afegeix una frase des de la forma d’ona.';
@@ -2343,16 +2394,7 @@ function renderDesk(){
     const cd=compareData(ph,take);
     if(cd.n<=10)html='<p class="empty">No he detectat prou veu a la presa '+take.n+' per comparar-la. Comprova el micròfon i torna-ho a provar.</p>';
     else{
-      const m=Math.round(cd.mean),tend=m>15?'tendeixes a quedar alta':m<-15?'tendeixes a quedar baixa':'afinació centrada';
-      const nh=noteHits(noteSeg(refFor(ph,stageKey(ph))),youPoints(ph)),ok=nh?nh.filter(Boolean).length:0,nn=nh?nh.length:0,frac=nn?ok/nn:0;
-      const good=frac>=.85;
-      let tip='';
-      if(good&&ok===nn)tip='Totes les notes al lloc.';
-      else if(cd.tkNotes>=2&&cd.refSpan>1&&cd.tkSpan>cd.refSpan*1.25+0.5)tip='L’has cantada més lenta que l’original. Escolta-la un cop més i segueix la base.';
-      else if(cd.tkNotes>=2&&cd.refSpan>1&&cd.tkSpan<cd.refSpan*0.75-0.5)tip='L’has cantada més ràpida que l’original. Deixa que la base et porti.';
-      else if(m>30)tip='Vas una mica alta: canta-la una mica més greu.';
-      else if(m<-30)tip='Vas una mica baixa: canta-la una mica més aguda.';
-      else{const miss=nh.findIndex(h=>!h);tip=miss>=0?'Fixa’t en la nota '+(miss+1)+' de '+nn+': és la primera que se t’escapa. Escolta-la i torna-hi.':'Gairebé totes! Una vegada més i ho tens.'}
+      const v=verdictFor(ph,take,cd),m=v.m,tend=m>15?'tendeixes a quedar alta':m<-15?'tendeixes a quedar baixa':'afinació centrada',ok=v.ok,nn=v.nn,frac=v.frac,tip=v.tip;
       html='<div class="verdict"><div class="stat"><span class="big" style="color:var(--'+(frac>=.75?'good':frac>=.5?'mid':'low')+')">'+ok+'<span style="font-size:.5em;color:var(--muted)"> / '+nn+'</span></span><span class="stat-l">notes encertades</span></div>'
         +'<div class="verdict-s">'+tip+'</div></div>'
         +'<details class="details adv-only"><summary>Detalls</summary><div class="stats">'
@@ -2369,7 +2411,123 @@ function renderDesk(){
     :'<li class="empty">Les teves gravacions d’aquesta frase apareixeran aquí.</li>';
   drawCompare();
 }
+function verdictFor(ph,take,cd){
+  cd=cd||compareData(ph,take);if(!cd||cd.n<=10)return{heard:false,ok:0,nn:0,frac:0,m:0,tip:'No he detectat prou veu. Comprova el micròfon i torna-ho a provar.',cd};
+  const m=Math.round(cd.mean);
+  const nh=noteHits(noteSeg(refFor(ph,stageKey(ph))),youPoints(ph)),ok=nh?nh.filter(Boolean).length:0,nn=nh?nh.length:0,frac=nn?ok/nn:0;
+  let tip='';
+  if(frac>=.85&&ok===nn)tip='Totes les notes al lloc.';
+  else if(cd.tkNotes>=2&&cd.refSpan>1&&cd.tkSpan>cd.refSpan*1.25+0.5)tip='L’has cantada més lenta que l’original. Escolta-la un cop més i segueix la base.';
+  else if(cd.tkNotes>=2&&cd.refSpan>1&&cd.tkSpan<cd.refSpan*0.75-0.5)tip='L’has cantada més ràpida que l’original. Deixa que la base et porti.';
+  else if(m>30)tip='Vas una mica alta: canta-la una mica més greu.';
+  else if(m<-30)tip='Vas una mica baixa: canta-la una mica més aguda.';
+  else{const miss=nh?nh.findIndex(h=>!h):-1;tip=miss>=0?'Fixa’t en la nota '+(miss+1)+' de '+nn+': és la primera que se t’escapa.':'Gairebé totes! Una vegada més i ho tens.'}
+  return{heard:true,ok,nn,frac,m,tip,cd};
+}
 function renderAll(){drawSongStatic();drawSong();drawMini();renderPhrases();renderDesk();saveSoon()}
+
+/* ---------- student flow: Comença → (listen → sing → result 3 s) → next phrase … until the end or Pausa ---------- */
+const FL={state:'idle',token:0,repeated:false,queue:null,next:null,result:null,cd:0};
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const studentOn=()=>document.body.classList.contains('simple')&&!!S.mix&&!!(S.stem||S.approx);
+let cvHome=null,cvNext=null;
+function mountStudent(on){
+  const wrap=document.querySelector('.cv-wrap');if(!wrap)return;
+  if(!cvHome){cvHome=wrap.parentNode;cvNext=wrap.nextSibling}
+  if(on&&wrap.parentNode!==$('#stStage'))$('#stStage').appendChild(wrap);
+  else if(!on&&wrap.parentNode===$('#stStage'))cvHome.insertBefore(wrap,cvNext);
+  const opts=document.querySelector('.sb-opts');
+  if(opts){if(on&&opts.parentNode!==$('#gearOpts'))$('#gearOpts').appendChild(opts);else if(!on&&opts.parentNode===$('#gearOpts'))document.querySelector('.statusbar').appendChild(opts)}
+}
+const advanceMode=()=>{try{return localStorage.getItem('mirall-advance')||'auto'}catch(e){return'auto'}};
+function bestScore(ph){let b=null;for(const t of ph.takes)if(t.score!=null&&(b==null||t.score>b))b=t.score;return b}
+function nextInQueue(){if(FL.queue){while(FL.queue.length){const k=FL.queue.shift();if(k!==S.cur&&k<S.phrases.length)return k}return null}return S.cur+1<S.phrases.length?S.cur+1:null}
+async function flowStep(){
+  if(!studentOn())return;
+  FL.token++;const tok=FL.token;cancel();FL.state='running';FL.result=null;FL.next=null;renderStudent();
+  $('#oTimes').value='1';
+  await cycle();
+  if(tok!==FL.token)return;
+  const ph=curPh(),take=S.take;
+  if(!ph||!take){FL.state='paused';renderStudent();return}
+  const v=verdictFor(ph,take);FL.result=v;FL.state='result';
+  const weak=!v.heard||v.frac<0.5;
+  let next;if(weak&&!FL.repeated&&v.heard){FL.repeated=true;next=S.cur}else{FL.repeated=false;next=nextInQueue()}
+  FL.next=next;renderStudent();
+  if(!v.heard){FL.state='paused';renderStudent();return}
+  if(advanceMode()==='manual'&&next!=null)return;
+  for(let k=3;k>0;k--){FL.cd=k;renderStudentActions();await sleep(1000);if(tok!==FL.token)return}
+  FL.cd=0;
+  if(next==null){flowFinal();return}
+  select(next);flowStep();
+}
+function flowPause(){FL.token++;cancel();FL.state='paused';FL.cd=0;renderStudent()}
+function flowRetry(){FL.repeated=false;flowStep()}
+function flowNext(){FL.token++;cancel();const nx=FL.next!=null?FL.next:nextInQueue();FL.next=null;if(nx==null){flowFinal();return}select(nx);flowStep()}
+function flowFinal(){FL.token++;cancel();FL.state='final';FL.queue=null;FL.cd=0;renderStudent()}
+function flowStart(){FL.queue=null;FL.repeated=false;flowStep()}
+async function flowListenYou(){const ph=curPh(),t=S.take;if(!ph||!t)return;FL.token++;cancel();FL.state='paused';renderStudent();await playYou(t,ph)}
+function flowReview(){const weak=S.phrases.map((p,i)=>[p,i]).filter(([p])=>{const b=bestScore(p);return b==null||b<50}).map(([,i])=>i);if(!weak.length){toast('Cap frase fluixa: totes per sobre de la meitat.');return}FL.queue=weak.slice(1);FL.repeated=false;select(weak[0]);flowStep()}
+async function flowFull(){FL.token++;cancel();FL.state='full';renderStudent();S.cursor=Math.max(0,S.phrases[0].start-1);await fullStart()}
+function renderStudent(){
+  const on=studentOn();mountStudent(on);$('#student').hidden=!on;if(!on)return;
+  const ph=curPh(),n=S.phrases.length,i=S.cur,done=S.phrases.filter(p=>p.takes.length).length;
+  $('#tbSong').textContent=S.name||'';
+  $('#stFill').style.width=(n?done/n*100:0)+'%';$('#stCount').textContent=n?'Frase '+(i+1)+' de '+n:'';
+  const h=$('#stHead'),lyr=ph&&ph.lyr?'<span class="st-lyr">«'+esc(ph.lyr)+'»</span>':'';
+  const isFinal=FL.state==='final';
+  $('#stStage').hidden=isFinal;$('#stCap').hidden=isFinal;$('#stFinal').hidden=!isFinal;
+  if(!ph){h.innerHTML='';$('#stActions').innerHTML='';return}
+  if(FL.state==='running'){
+    const ph2=S.phase==='listen'?'<span class="pill listen"><i></i>Escolta</span>':S.phase==='rec'?'<span class="pill rec"><i></i>Ara canta tu</span>':'<span class="pill wait"><i></i>Un moment…</span>';
+    h.innerHTML=ph2+lyr;
+  }else if(FL.state==='result'&&FL.result){
+    const v=FL.result;h.innerHTML=v.heard?'<span class="st-res"><em style="color:var(--'+(v.frac>=.75?'good':v.frac>=.5?'mid':'low')+')">'+v.ok+'</em> de '+v.nn+' notes</span><span class="st-tip">'+v.tip+'</span>':'<span class="st-res">No t’he sentit</span><span class="st-tip">'+v.tip+'</span>';
+  }else if(FL.state==='full'){h.innerHTML='<span class="pill rec"><i></i>Canta tota la cançó</span><span class="st-tip">Atura quan vulguis.</span>'}
+  else if(isFinal){
+    const scores=S.phrases.map(bestScore),weakN=S.phrases.map((p,k)=>[scores[k],k]).filter(([b])=>b==null||b<50).map(([,k])=>k+1);
+    h.innerHTML='';
+    $('#stFinal').innerHTML='<h1>Has cantat tota la cançó</h1><p>'+n+' frases · les barres més baixes són les que pots repassar</p>'
+      +'<div class="st-bars" style="grid-template-columns:repeat('+n+',minmax(0,1fr))">'+S.phrases.map((p,k)=>{const b=scores[k];return'<button type="button" data-i="'+k+'" class="'+(b==null||b<50?'weak':'')+'" style="height:'+Math.max(8,Math.round((b==null?6:b)/100*180))+'px" aria-label="Frase '+(k+1)+(b==null?'':' · '+b+' %')+'" title="Frase '+(k+1)+(b==null?'':' · '+b+' % de notes')+'"></button>'}).join('')+'</div>'
+      +'<div class="st-nums" style="grid-template-columns:repeat('+n+',minmax(0,1fr))">'+S.phrases.map((p,k)=>'<span>'+(k+1)+'</span>').join('')+'</div>';
+    $('#stActions').innerHTML=(weakN.length?'<button class="bigbtn" type="button" data-a="review">Repassa les fluixes ('+weakN.join(', ')+')</button>':'<button class="bigbtn" type="button" data-a="restart">Torna-la a cantar</button>')
+      +'<button class="midbtn" type="button" data-a="full">Canta-la tota seguida</button><button class="linkbtn" type="button" data-a="home">Torna a l’inici</button>';
+    return;
+  }else{
+    const b=bestScore(ph);
+    h.innerHTML='<h1>Frase '+(i+1)+' <small>de '+n+'</small></h1>'+lyr+(FL.state==='paused'?'<span class="st-tip">'+(S.take?'':'En pausa.')+'</span>':'');
+  }
+  $('#stCap').textContent=FL.state==='idle'&&!ph.takes.length?'Aquestes són les notes que canta. Quan comencis, tot va sol: la sents, la cantes i passa a la següent. Atura quan vulguis.':FL.state==='paused'&&!S.take&&$('#status').textContent?$('#status').textContent:'';
+  renderStudentActions();
+}
+function renderStudentActions(){
+  const a=$('#stActions'),st=FL.state;if(st==='final')return;
+  const manual=advanceMode()==='manual';
+  if(st==='idle')a.innerHTML='<button class="bigbtn" type="button" data-a="start"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"></path></svg>Comença</button><button class="linkbtn" type="button" data-a="listen">Només vull sentir-la</button>';
+  else if(st==='running')a.innerHTML='<button class="midbtn" type="button" data-a="pause">❚❚ Pausa</button>';
+  else if(st==='full')a.innerHTML='<button class="midbtn" type="button" data-a="stopfull">■ Atura</button>';
+  else if(st==='result'){
+    const nx=FL.next,lbl=nx==null?'Resum':nx===S.cur?'Una altra vegada':'Frase '+(nx+1);
+    a.innerHTML=(manual&&nx!=null?'<button class="bigbtn" type="button" data-a="next">'+(nx===S.cur?'Torna-hi':'Següent →')+'</button>':FL.cd?'<span class="st-cd"><b>'+FL.cd+'</b>'+lbl+' en '+FL.cd+' segon'+(FL.cd===1?'':'s')+'…</span>':'<span class="st-cd">'+lbl+'…</span>')
+      +(nx===S.cur&&!manual?'':'<button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button>')+'<button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="pause">Pausa</button>';
+  }else if(st==='paused'){
+    a.innerHTML='<button class="bigbtn" type="button" data-a="resume">▶ Continua</button>'+(S.take?'<button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>':'')+'<button class="midbtn" type="button" data-a="listen">Escolta-la</button>'+(S.cur+1<S.phrases.length?'<button class="midbtn" type="button" data-a="next">Següent →</button>':'<button class="midbtn" type="button" data-a="final">Resum</button>');
+  }
+}
+$('#stActions').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;
+  if(a==='start')flowStart();else if(a==='listen'){FL.token++;listen()}else if(a==='pause')flowPause();else if(a==='resume')flowRetry();else if(a==='retry')flowRetry();
+  else if(a==='next')flowNext();else if(a==='you')flowListenYou();else if(a==='final')flowFinal();else if(a==='review')flowReview();else if(a==='restart'){FL.queue=null;select(0);flowStep()}
+  else if(a==='full')flowFull();else if(a==='stopfull'){cancel()}else if(a==='home'){FL.state='idle';select(0);renderStudent()}});
+$('#stFinal').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;FL.state='idle';select(+b.dataset.i);renderStudent()});
+// gear menu
+$('#bGear').addEventListener('click',e=>{e.stopPropagation();const p=$('#gearPop');p.hidden=!p.hidden;$('#bGear').setAttribute('aria-expanded',String(!p.hidden))});
+document.addEventListener('click',e=>{if(!e.target.closest('.gear')){$('#gearPop').hidden=true;$('#bGear').setAttribute('aria-expanded','false')}});
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{$('#gearPop').hidden=true;showView(b.dataset.go)}));
+$('#gearTeacher').addEventListener('click',()=>{$('#gearPop').hidden=true;setMode(false)});
+$('#bExport2').addEventListener('click',()=>{$('#gearPop').hidden=true;$('#bExport').click()});
+$('#bPrepMine').addEventListener('click',()=>{setMode(false);$('#fMix').click()});
+$('#oAdvance').addEventListener('change',()=>{try{localStorage.setItem('mirall-advance',$('#oAdvance').value)}catch(e){}});
+try{$('#oAdvance').value=localStorage.getItem('mirall-advance')||'auto'}catch(e){}
 function select(i){if(i<0||i>=S.phrases.length)return;if(i!==S.cur){S.cur=i;S.take=null;S.cmpCursor=null}const p=S.phrases[i];if(p.start<V.v0||p.end>V.v1){const span=V.v1-V.v0;if(p.end-p.start<span*0.9)setView(p.start-(span-(p.end-p.start))/2,p.start-(span-(p.end-p.start))/2+span);else viewPhrase()}renderAll()}
 
 /* ---------- phrase title (free text: the lyric, or anything that helps) ---------- */
@@ -2617,7 +2775,7 @@ document.addEventListener('keydown',e=>{
   if(e.target.closest('#rangePanel')&&k!=='Escape')return;
   if(k==='+'||k==='='){e.preventDefault();$('#zIn').click();return}
   if(k==='-'){e.preventDefault();$('#zOut').click();return}
-  const map={' ':listen,'r':recordOnly,'R':recordOnly,'Enter':cycle,'Escape':()=>{if(fullRec)fullStop();else cancel()},'ArrowLeft':()=>{cancel();select(S.cur-1)},'ArrowRight':()=>{cancel();select(S.cur+1)}};
+  const map={' ':listen,'r':recordOnly,'R':recordOnly,'Enter':cycle,'Escape':()=>{if(fullRec)fullStop();else if(studentOn()&&FL.state==='running')flowPause();else cancel()},'ArrowLeft':()=>{cancel();select(S.cur-1)},'ArrowRight':()=>{cancel();select(S.cur+1)}};
   if(map[k]){e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();map[k]()}
 });
 
@@ -2644,6 +2802,8 @@ function setMode(simple){
   document.querySelectorAll('#bMode button').forEach(b=>b.classList.toggle('on',(b.dataset.mode==='simple')===simple));
   try{localStorage.setItem('mirall-mode',simple?'simple':'full')}catch(e){}
   if(simple&&S.editNotes)setEdit(false);
+  if(!simple&&FL.state==='running'){FL.token++;cancel();FL.state='idle'}
+  mountStudent(simple&&!!S.mix);
   setTabs();if(S.mix){renderAll();drawCompare();if(simple&&VIEW==='song'&&viewReady('sing'))showView('sing')}
 }
 document.querySelectorAll('#bMode button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode==='simple')));
