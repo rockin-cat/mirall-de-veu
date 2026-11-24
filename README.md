@@ -8,7 +8,7 @@ Eina de Rockin per a l'entrenament de cant: carregues una cançó, el programa s
 
 1. **Carrega una cançó** (MP3, WAV, M4A). Tot es processa al teu ordinador; la cançó no s'envia enlloc.
 2. **Separa la veu.** Fa servir el model Demucs v4 (htdemucs) amb ONNX Runtime Web. La primera vegada descarrega el model (uns 170 MB) i el navegador el recorda.
-3. **Treballa frase a frase.** Les frases i la melodia es treuen només de la pista de veu. Escolta, repeteix amb la base, compara. També pots cantar la cançó sencera de seguit.
+3. **Treballa frase a frase.** Les frases i la melodia es treuen només de la pista de veu; la melodia es llegeix amb un model neuronal (CREPE) i el professorat la pot corregir nota a nota. Escolta, repeteix amb la base, compara. També pots cantar la cançó sencera de seguit.
 4. **Troba el teu rang vocal.** Una prova curta amb la mateixa cançó: la frase més aguda va pujant de to i la més greu va baixant; cada cop la sents, la cantes sobre la base i el programa comprova si has arribat a la nota (en l'octava que cantis). Et diu entre quines notes et va bé cantar i quin to et convé per a la cançó.
 
 Cal un navegador actual (Chrome, Edge o Safari recents) i auriculars.
@@ -16,6 +16,6 @@ Cal un navegador actual (Chrome, Edge o Safari recents) i auriculars.
 ## Crèdits
 
 - Separació de fonts: [Demucs](https://github.com/facebookresearch/demucs) (Meta AI, llicència MIT) a través de [demucs-web](https://github.com/timcsy/demucs-web) i [ONNX Runtime Web](https://onnxruntime.ai/).
-- Detecció d'altura: algorisme YIN, implementat a la mateixa pàgina.
+- Detecció d’altura: [CREPE](https://github.com/marl/crepe) (Kim, Salamon, Li i Bello, 2018; llicència MIT), model «tiny» exportat a ONNX des dels pesos de [torchcrepe](https://github.com/maxrmorrison/torchcrepe) (llicència MIT), executat amb ONNX Runtime Web; algorisme YIN de reserva, implementat a la mateixa pàgina.
 
 Una eina de [Rockin](https://rockin.cat).

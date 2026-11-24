@@ -25,6 +25,30 @@
 *{box-sizing:border-box}
 body.simple .adv-only{display:none!important}
 body:not(.simple) .simple-only{display:none!important}
+/* who is using it: alumnat (linear, no tabs for the song) or professorat (everything) */
+.modeswitch{display:inline-flex;border:1.5px solid var(--rk-tinta);border-radius:8px;overflow:hidden}
+.modeswitch button{border:0;background:transparent;color:var(--rk-tinta);font-weight:700;font-size:13px;padding:6px 11px;cursor:pointer}
+.modeswitch button.on{background:var(--rk-tinta);color:var(--rk-groc)}
+body.simple .tab[data-view="song"].ready{display:none}
+.snav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.snav .btn{padding:8px 14px}
+.sdots{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:120px}
+.sdots i{display:block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel);cursor:pointer}
+.sdots i.done{background:var(--rk-groc);border-color:#c99300}
+.sdots i.cur{border-color:var(--ink);box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--ink)}
+.snav .stat-l{white-space:nowrap}
+.prep{border:1.5px solid var(--rk-groc);background:#FFF7DC;border-radius:10px;padding:10px 14px;display:flex;gap:14px;align-items:flex-start;font-size:13.5px;flex:none}
+.prep ol{margin:4px 0 0;padding-left:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 18px}
+.prep ol li{padding-left:2px}
+.prep .x{margin-left:auto;border:0;background:transparent;font-size:18px;cursor:pointer;color:var(--muted)}
+@media (max-width:900px){.prep ol{grid-template-columns:minmax(0,1fr)}}
+.edit-on #cvCmp{cursor:crosshair}
+.editbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.editbar .hint{color:var(--muted)}
+body.simple .takes-panel{display:none!important}
+body.simple .phrases{display:none!important}
+body.simple .work{grid-template-columns:minmax(0,1fr)}
+body.simple .desk-head h2{font-size:24px}
 body.simple .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
 body.simple .step b{font-size:21px}
 body.simple .pbtn{padding:10px 8px}
@@ -147,6 +171,7 @@ button,select,input{font:inherit;color:inherit}
 .sbtn{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;line-height:1.3}
 .sbtn:hover{border-color:var(--muted)}
 .sbtn:disabled{opacity:.4;cursor:default}
+.sbtn.on{background:var(--rk-groc);border-color:#c99300;font-weight:700}
 .clock{font-size:13px;color:var(--muted);min-width:60px}
 .rhythm{font-size:13px}
 .rhythm label{display:flex;align-items:center;gap:5px}
@@ -313,7 +338,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       <button class="tab" type="button" data-view="help">Ajuda</button>
     </nav>
     <div class="loaders">
-      <button class="btn ghost" id="bMode" type="button" title="Mode senzill: només el que cal per escoltar, cantar i veure el resultat">Mode complet</button>
+      <div class="modeswitch" id="bMode" role="group" aria-label="Qui fa servir l’eina"><button type="button" data-mode="simple" title="Només el que cal per practicar: obre la sessió i canta">Alumnat</button><button type="button" data-mode="full" title="Prepara la cançó: separa la veu, revisa frases i melodia, desa la sessió">Professorat</button></div>
       <button class="btn ghost" id="bExport" type="button" title="Desa la cançó, la veu separada, les frases i les preses en un fitxer .mirall" hidden>Desa la sessió</button>
       <label class="btn" for="fMix">Carrega una cançó</label>
       <input type="file" id="fMix" accept="audio/*" class="vh">
@@ -323,14 +348,25 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   <main class="app">
   <section class="view on" id="vSong">
   <section class="panel start" id="startPanel" aria-label="Comença">
-    <div class="eyebrow">Pas 1</div>
-    <h1 class="start-t">Tria una cançó</h1>
-    <p class="start-s">Un fitxer d’àudio (MP3, WAV o M4A) de la cançó que vols cantar. El programa en separarà la veu i la dividirà en frases per cantar-les una a una.</p>
-    <label class="btn start-btn" for="fMix">Tria un fitxer d’àudio</label>
-    <button class="sbtn" id="bResume" type="button" hidden></button>
-    <label class="sbtn" for="fSess">Obre una sessió desada (.mirall)</label>
+    <div class="simple-only" style="display:contents">
+      <div class="eyebrow">Comença</div>
+      <h1 class="start-t">Obre la cançó que t’ha passat el professorat</h1>
+      <p class="start-s">És un fitxer <b>.mirall</b> amb la cançó ja preparada: la veu separada i les frases marcades. Després, frase a frase: l’escoltes, la cantes i et veus al costat de l’original.</p>
+      <label class="btn start-btn" for="fSess">Obre la sessió (.mirall)</label>
+      <button class="sbtn" id="bResume" type="button" hidden></button>
+      <label class="sbtn" for="fMix">O carrega una cançó (MP3, WAV, M4A) i prepara-la tu</label>
+      <p class="start-s small">O arrossega el fitxer aquí. El que cantis es desa en aquest navegador fins que tornis.</p>
+    </div>
+    <div class="adv-only" style="display:contents">
+      <div class="eyebrow">Pas 1</div>
+      <h1 class="start-t">Tria una cançó</h1>
+      <p class="start-s">Un fitxer d’àudio (MP3, WAV o M4A). El programa en separa la veu, llegeix la melodia amb un model neuronal i la divideix en frases. Després revises les frases i la melodia, i deses la sessió (.mirall) per passar-la a l’alumnat.</p>
+      <label class="btn start-btn" for="fMix">Tria un fitxer d’àudio</label>
+      <button class="sbtn" id="bResume2" type="button" hidden></button>
+      <label class="sbtn" for="fSess">Obre una sessió desada (.mirall)</label>
+      <p class="start-s small">O arrossega el fitxer aquí. La feina es desa en aquest navegador; per guardar-la per a un altre dia, un altre ordinador o l’alumnat, fes servir «Desa la sessió».</p>
+    </div>
     <input type="file" id="fSess" accept=".mirall" class="vh">
-    <p class="start-s small">O arrossega el fitxer aquí. La feina es desa en aquest navegador; per guardar-la per a un altre dia o un altre ordinador, fes servir «Desa la sessió».</p>
   </section>
 
   <section class="panel" id="songPanel" aria-label="Cançó" hidden>
@@ -360,6 +396,16 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </div>
     </div>
     <p class="note" id="sepNote" hidden></p>
+    <div class="prep adv-only" id="prep" hidden>
+      <div><b>Per preparar aquesta cançó per a l’alumnat</b>
+        <ol>
+          <li><b>Revisa les frases</b> a la forma d’ona: clica’n una i prem Espai per sentir-la; elimina les que no són veu, uneix o divideix, estira les vores. Els trams grisos són dubtosos: clica’ls si són veu.</li>
+          <li><b>Revisa la melodia</b> a la pestanya Canta: si una barra no és la cantant (un instrument, una octava falsa), prem «Edita les notes» i esborra-la o mou-la.</li>
+          <li><b>Desa la sessió</b> (botó de dalt) i passa el fitxer .mirall a l’alumnat: l’obren amb «Obre la sessió» en mode Alumnat, sense esperar cap separació.</li>
+        </ol>
+      </div>
+      <button class="x" type="button" id="prepX" aria-label="Amaga" title="Amaga aquesta guia">×</button>
+    </div>
     <div class="edit-bar adv-only">
       <div class="group">
         <button class="sbtn" id="zOut" type="button" title="Allunya (−)">−</button>
@@ -437,6 +483,12 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
 
     <div class="desk">
       <div class="panel desk-top">
+        <div class="snav simple-only">
+          <button class="btn ghost" id="sPrev" type="button">← Anterior</button>
+          <div class="sdots" id="sdots" aria-label="Frases"></div>
+          <span class="stat-l" id="sProg"></span>
+          <button class="btn" id="sNext" type="button">Següent →</button>
+        </div>
         <div class="desk-head">
           <div class="desk-id">
             <h2 id="pTitle">—</h2>
@@ -483,6 +535,12 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
             <label class="fader a" for="gBase"><span>Base <b class="mono" id="gBaseV">80%</b></span><input type="range" id="gBase" min="0" max="1.5" step="0.05" value="0.8"></label>
           </div>
           <label for="oVerb" class="adv-only">Reverb a la teva veu <select id="oVerb"><option value="0">cap</option><option value="0.22" selected>una mica</option><option value="0.45">sala gran</option></select></label>
+          <div class="editbar adv-only">
+            <button class="sbtn" id="bEdit" type="button" title="Corregeix la melodia de l’original: esborra o mou notes">✎ Edita les notes</button>
+            <button class="sbtn" id="bEditDel" type="button" hidden>Esborra la nota</button>
+            <button class="sbtn" id="bEditReset" type="button" hidden>Restaura la detectada</button>
+            <span class="hint" id="editHint" hidden>Clica una nota per triar-la · arrossega-la amunt o avall · Supr l’esborra · doble clic en un buit crea una nota</span>
+          </div>
           <details class="adv inline adv-only"><summary>Ajustos</summary><div class="adv-body"><div class="adv-row">
           <label for="oOct"><input type="checkbox" id="oOct" checked> Ignora l'octava</label>
           <label for="oNudge">Alineació <input type="range" id="oNudge" min="-0.6" max="0.6" step="0.01" value="0"> <span class="mono" id="oNudgeV">0,00 s</span></label>
@@ -491,7 +549,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
       </div>
 
       <div class="panel takes-panel">
-        <h3>Preses <span class="stat-l simple-only">cada vegada que cantes la frase es guarda aquí; clica’n una per veure-la i escoltar-la</span></h3>
+        <h3>Preses</h3>
         <ul class="tlist" id="tlist"></ul>
       </div>
     </div>
@@ -541,12 +599,14 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
   <section class="view" id="vHelp">
   <section class="panel help simple-only">
     <h3>Com funciona</h3>
-    <p><b>1.</b> Tria una cançó (pestanya <b>Cançó</b>). <b>2.</b> Espera que el programa en separi la veu. <b>3.</b> A la pestanya <b>Canta</b>, tria una frase, prem <b>Escolta</b> per sentir-la i <b>Canta-la</b> per cantar-la amb la música. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
+    <p><b>1.</b> Obre la sessió (.mirall) que t’ha passat el professorat. <b>2.</b> Prem <b>Escolta</b> per sentir la frase i <b>Canta-la</b> per cantar-la amb la música. <b>3.</b> Mira com ha anat i passa a la següent amb <b>Següent →</b>. Veuràs les notes de la cançó com a barres i la teva veu a sobre: quan encertes la nota, s’il·lumina. Posa’t auriculars.</p>
   </section>
   <section class="panel help adv-only">
     <h3>Com funciona</h3>
     <p><b>1. Carrega una cançó</b> (MP3, WAV, M4A). <b>2. Separa la veu</b>: el programa fa servir Demucs, un model obert, dins del teu navegador; la cançó no surt del teu ordinador. A la pestanya <b>Cançó</b> hi tens la forma d’ona per retocar les frases i la gravació de la cançó sencera. <b>3. Treballa frase a frase</b> a la pestanya <b>Canta</b>: les frases i la melodia es treuen només de la pista de veu. Escolta la frase, repeteix-la cantant sobre la base i mira quines notes has encertat.</p>
     <p><b>To i velocitat</b> (a la barra de sota, valen per a tot). Pots pujar o baixar el to de tota la cançó fins a 6 semitons perquè vagi bé a la teva veu (les notes de l’original es desplacen igual), i escoltar i cantar la frase més lenta (85, 70 o 55 %) sense que canviï el to. La comparació ho té en compte, i cada presa recorda amb quin to i velocitat es va cantar. La cançó sencera va a velocitat normal.</p>
+    <p><b>La melodia de l’original</b> es llegeix amb un model neuronal (CREPE) que corre al teu ordinador, molt més fiable que el detector clàssic amb la reverberació i els instruments que es colen a la pista de veu; el detector clàssic queda de reserva si el model no es pot carregar. Si tot i així una barra no és la cantant, a «Comparació» prem <b>Edita les notes</b>: clica una nota i arrossega-la amunt o avall, Supr l’esborra, doble clic en un buit en crea una. La melodia corregida es desa amb la sessió i és la que veu i puntua l’alumnat.</p>
+    <p><b>Alumnat i professorat.</b> En mode Alumnat només hi ha el que cal per practicar: obrir la sessió, escoltar, cantar, veure el resultat i passar a la frase següent. En mode Professorat es prepara la cançó (separar, revisar frases i melodia) i es desa la sessió per passar-la.</p>
     <p><b>El teu rang vocal.</b> A la pestanya «Rang vocal» hi ha una prova curta: el programa agafa la frase més aguda de la cançó i la va pujant de dos en dos semitons: cada cop la sents i després la cantes sobre la base, i el programa mira si has arribat a la nota més aguda (en l’octava que cantis) i si la frase ha sortit afinada. Quan no hi arribes, prova el semitò del mig. Pots corregir-lo amb els botons si no estàs d’acord. Després fa el mateix cap avall amb la frase més greu. Amb el resultat et diu entre quines notes et va bé cantar i quin to et convé per a aquesta cançó, i te’l pot posar directament. El rang es desa amb la sessió.</p>
     <p><b>Canta amb auriculars.</b> Si la base surt pels altaveus, el micròfon també la grava i la comparació es confon. Amb auriculars Bluetooth, grava amb el micròfon de l’ordinador, no amb el dels auriculars: el retard es corregeix sol en acabar la presa.</p>
     <p><b>A la comparació,</b> clica una barra de nota per sentir aquella nota: primer l’original i després tu. Clica en un espai buit per triar des d’on sona la reproducció (l’original, tu o les dues); doble clic per tornar al principi. Els dos volums («La teva veu» i «Base») valen per a totes les escoltes de la teva veu i es poden moure mentre sona. La reverb només s’aplica en escoltar-te; el WAV que descarregues és la veu neta.</p>
@@ -670,6 +730,105 @@ function onset(tr){for(let f=0;f<tr.midi.length;f++)if(!isNaN(tr.midi[f])&&tr.rm
 function voicedSpan(tr){let a=-1,b=-1;for(let f=0;f<tr.midi.length;f++)if(!isNaN(tr.midi[f])){if(a<0)a=f;b=f}return a<0?0:(b-a)*tr.hop}
 
 /* ---------- sources ---------- */
+/* ---------- neural pitch tracker: CREPE (tiny) running on ONNX Runtime Web. Frames of 64 ms at 16 kHz, every 10 ms,
+   360 bins of 20 cents; the network gives a probability per bin, the pitch is the weighted centre around the best bin and
+   the confidence is that bin's probability. Far more robust than YIN on a separated voice (reverb, bleed, breathy bits). */
+const NN_URL=new URL('crepe-tiny.onnx',location.href).href,NN_C0=1997.3794084376191,NN_THR=0.5;
+let nnSess=null,nnLoad=null,nnFailed=false,nnEngine='',nnFailWhy='';
+const withTimeoutP=(pr,ms,what)=>Promise.race([pr,new Promise((_,rej)=>setTimeout(()=>rej(new Error(what)),ms))]);
+async function nnReady(){
+  if(nnSess)return nnSess;if(nnFailed)return null;
+  if(!nnLoad)nnLoad=(async()=>{
+    try{
+      if(!sepOrt){sepOrt=await withTimeoutP(import(ORT_URL+'ort.all.mjs'),45000,'no s’ha pogut carregar el motor (ONNX Runtime) des d’internet');sepOrt.env.wasm.wasmPaths=ORT_URL}
+      sepOrt.env.wasm.numThreads=self.crossOriginIsolated?(navigator.hardwareConcurrency||4):1;
+      const c=await openCache();let res=c?await c.match(NN_URL):null;
+      if(!res){res=await withTimeoutP(fetch(NN_URL),60000,'no s’ha pogut descarregar el model de melodia');if(!res.ok)throw new Error('model de melodia: HTTP '+res.status);if(c)try{await c.put(NN_URL,res.clone())}catch(e){}}
+      const buf=await res.arrayBuffer();
+      const make=eps=>sepOrt.InferenceSession.create(buf.slice(0),{executionProviders:eps});
+      const want=$('#oEngine')?$('#oEngine').value:'auto';
+      let gpu=null,cpu=null;
+      if(navigator.gpu&&want!=='cpu'){try{gpu=await make(['webgpu'])}catch(e){console.warn('nn webgpu',e);gpu=null}}
+      if(!gpu||want==='auto'){try{cpu=await make(['wasm'])}catch(e){if(sepOrt.env.wasm.numThreads>1){sepOrt.env.wasm.numThreads=1;cpu=await make(['wasm'])}else throw e}}
+      let sess=gpu||cpu;nnEngine=gpu?'la targeta gràfica':'el processador';
+      if(gpu&&cpu){
+        // one batch on each, keep the faster
+        const x=new Float32Array(256*1024);for(let i=0;i<x.length;i++)x[i]=Math.sin(i*0.05)+Math.sin(i*0.013);
+        const time=async ss=>{const t=new sepOrt.Tensor('float32',x,[256,1024]);await ss.run({audio:t});const t0=performance.now();await ss.run({audio:t});return performance.now()-t0};
+        let tg=Infinity,tc=Infinity;try{tg=await time(gpu)}catch(e){tg=Infinity}try{tc=await time(cpu)}catch(e){tc=Infinity}
+        if(tc<=tg){sess=cpu;nnEngine='el processador'}else{sess=gpu;nnEngine='la targeta gràfica'}
+        console.log('nn bench gpu',tg.toFixed(0),'ms cpu',tc.toFixed(0),'ms →',nnEngine);
+      }
+      nnSess=sess;return sess;
+    }catch(e){console.warn('nn',e);nnFailed=true;nnFailWhy=errMsg(e);return null}
+  })();
+  return nnLoad;
+}
+// pitch track with the network. Returns the same shape as pitchTrack(): {midi,rms,hop,dur,mx} plus conf. Frame f is centred at f·10 ms.
+async function pitchTrackNN(x,sr,opt){
+  opt=opt||{};const sess=await nnReady();if(!sess)return null;
+  const y=sr===16000?x:resample(x,sr,16000),hop=160,W=1024,half=512,F=Math.max(0,Math.floor(y.length/hop)+1);
+  const midi=new Float32Array(F).fill(NaN),conf=new Float32Array(F),rms=new Float32Array(F);
+  let mx=0;
+  for(let f=0;f<F;f++){const o=f*hop-half;let s2=0,c=0;for(let j=0;j<W;j+=4){const i=o+j;if(i>=0&&i<y.length){const v=y[i];s2+=v*v}c++}rms[f]=Math.sqrt(s2/c);if(rms[f]>mx)mx=rms[f]}
+  const gate=mx*(opt.gate==null?0.02:opt.gate),todo=[];for(let f=0;f<F;f++)if(rms[f]>=gate)todo.push(f);
+  const B=256,inBuf=new Float32Array(B*W),bins=new Float32Array(360);for(let i=0;i<360;i++)bins[i]=NN_C0+20*i;
+  let prevBin=-1,prevF=-1e9;
+  for(let i=0;i<todo.length;i+=B){
+    if(opt.cancelled&&opt.cancelled())return null;
+    const n=Math.min(B,todo.length-i);
+    for(let k=0;k<n;k++){
+      const f=todo[i+k],o=f*hop-half,base=k*W;let m=0;
+      for(let j=0;j<W;j++){const idx=o+j;const v=idx>=0&&idx<y.length?y[idx]:0;inBuf[base+j]=v;m+=v}
+      m/=W;let v2=0;for(let j=0;j<W;j++){const v=inBuf[base+j]-m;inBuf[base+j]=v;v2+=v*v}
+      const sd=Math.max(1e-10,Math.sqrt(v2/W));for(let j=0;j<W;j++)inBuf[base+j]/=sd;
+    }
+    const t=new sepOrt.Tensor('float32',n===B?inBuf:inBuf.slice(0,n*W),[n,W]);
+    const out=await sess.run({audio:t}),pr=out.probs.data;
+    for(let k=0;k<n;k++){
+      const f=todo[i+k],o=k*360;let b=0,bm=-1;for(let j=0;j<360;j++)if(pr[o+j]>bm){bm=pr[o+j];b=j}
+      // continuity: if a good peak sits near the previous pitch and the best one is an octave away, prefer the near one
+      if(prevBin>=0&&f-prevF<=30&&Math.abs(b-prevBin)>=30){let nb=-1,nm=0;for(let j=Math.max(0,prevBin-30);j<Math.min(360,prevBin+31);j++)if(pr[o+j]>nm&&(j===0||pr[o+j]>=pr[o+j-1])&&(j===359||pr[o+j]>=pr[o+j+1])){nm=pr[o+j];nb=j}
+        if(nb>=0&&nm>=0.3&&nm>=0.5*bm){b=nb;bm=nm}}
+      const lo=Math.max(0,b-4),hi=Math.min(360,b+5);let sw=0,sp=0;for(let j=lo;j<hi;j++){sw+=bins[j]*pr[o+j];sp+=pr[o+j]}
+      const cents=sw/sp,hz=10*Math.pow(2,cents/1200);
+      midi[f]=69+12*Math.log2(hz/440);conf[f]=bm;
+      if(bm>=NN_THR){prevBin=b;prevF=f}
+    }
+    if(opt.onProgress)opt.onProgress((i+n)/todo.length);
+    await sleep(0);
+  }
+  const thr=opt.thr==null?NN_THR:opt.thr;
+  for(let f=0;f<F;f++)if(conf[f]<thr)midi[f]=NaN;
+  // median of 3 and no voiced runs shorter than 30 ms
+  const out=new Float32Array(F).fill(NaN);
+  for(let f=0;f<F;f++){if(isNaN(midi[f]))continue;const w=[];for(let k=-1;k<=1;k++){const v=midi[f+k];if(v!==undefined&&!isNaN(v))w.push(v)}w.sort((a,b)=>a-b);out[f]=w[w.length>>1]}
+  let f=0;while(f<F){if(isNaN(out[f])){f++;continue}let g=f;while(g<F&&!isNaN(out[g]))g++;if(g-f<3)for(let k=f;k<g;k++)out[k]=NaN;f=g}
+  return{midi:out,conf,rms,hop:0.01,dur:F*0.01,mx,nn:true};
+}
+// pitch of a take: the network when it is there, YIN otherwise
+async function trackFor(data,sr){const tr=await pitchTrackNN(data,sr,{thr:0.5});return tr||pitchTrack(data,sr)}
+// the whole separated voice through the network, once per song; phrases, sung-ness and the stage read from it
+let nnJob=0;
+async function nnSongPass(opts){
+  opts=opts||{};if(!S.stem||S.demo)return false;
+  const job=++nnJob,stem=S.stem,n=S.len,x=new Float32Array(n);for(let i=0;i<n;i++)x[i]=(S.vL[i]+S.vR[i])*.5;
+  S.nnBusy=true;renderSep();
+  const t0=performance.now();
+  const tr=await pitchTrackNN(x,S.sr,{onProgress:p=>{if(job===nnJob)sepUI('Llegint la melodia amb el model neuronal… '+Math.round(p*100)+' %',p)},cancelled:()=>job!==nnJob||S.stem!==stem});
+  if(job!==nnJob||S.stem!==stem)return false;
+  S.nnBusy=false;
+  if(!tr){S.nnNote='Melodia: detector clàssic (el model neuronal no s’ha pogut carregar'+(nnFailWhy?': '+nnFailWhy:'')+')';renderSep();return false}
+  S.nn=tr;S.nnFor=stem;S.nnNote='Melodia llegida amb el model neuronal (CREPE) en '+mmss(performance.now()-t0)+' amb '+nnEngine+'.';
+  // everything that was derived from the old pitch track is stale
+  analyse();S.phrases.forEach(p=>{p.ref=null;p.refS=null});
+  if(opts.redetect&&!S.phrases.some(p=>p.takes.length)&&phrasesUntouched()){detect();if(S.beats)S.dbShift=bestDownbeat();S.cur=S.phrases.length?0:-1;S.take=null;S.range=null;rangeReset()}
+  for(const p of S.phrases)for(const t of p.takes){t.track=await trackFor(t.data,t.sr);if(job!==nnJob)return false;compareData(p,t)}
+  renderAll();renderSep();saveSoon();
+  if(opts.toast!==false)toast('Melodia llegida amb el model neuronal'+(opts.redetect?': '+S.phrases.length+' frases.':'.'));
+  return true;
+}
+function phrasesUntouched(){const sig=S.phrases.map(p=>p.start.toFixed(2)+'-'+p.end.toFixed(2)).join(',');return sig===S.detectSig}
 function buildSources(){
   const {L,R,sr}=S.mix,n=L.length;
   S.sr=sr;S.len=n;S.mono=sameish(L,R);S.peaks=null;S.vpeaks=null;
@@ -704,7 +863,7 @@ function analyse(){
   for(let f=0;f<F;f++){let a=0,c=0;for(let k=-W;k<=W;k++){const v=dom[f+k];if(v!==undefined){a+=v;c++}}domS[f]=a/c}
   S.env=env;S.dom=domS;S.hop=hop/sr;
   // sung-ness: a pitch track over the whole voice track; a frame is "sung" when it sits inside a note held ≥120 ms in the vocal range
-  const tr=pitchTrack(fx,sr),notes=noteSeg(tr).filter(nt=>nt.t1-nt.t0>=0.12&&nt.m>=43&&nt.m<=86);
+  const tr=(S.nn&&S.nnFor===S.stem)?S.nn:pitchTrack(fx,sr),notes=noteSeg(tr).filter(nt=>nt.t1-nt.t0>=0.12&&nt.m>=43&&nt.m<=86);
   const voiced=new Uint8Array(F),stable=new Uint8Array(F);
   for(let f=0;f<F;f++){const v=tr.midi[Math.round(f*S.hop/tr.hop)];voiced[f]=(v!==undefined&&!isNaN(v)&&v>=43&&v<=86)?1:0}
   for(const nt of notes){const a=Math.max(0,Math.floor(nt.t0/S.hop)),b=Math.min(F,Math.ceil(nt.t1/S.hop));for(let f=a;f<b;f++)stable[f]=1}
@@ -780,16 +939,51 @@ function detect(){
     if(!isNaN(M))S.phrases=S.phrases.filter((p,i)=>{if(isNaN(meds[i])||meds[i]>=M-12)return true;S.ghosts.push({start:p.start,end:p.end,why:'sembla un instrument, no veu'});return false});
     S.ghosts.sort((a,b)=>a.start-b.start);
   }
+  S.detectSig=S.phrases.map(p=>p.start.toFixed(2)+'-'+p.end.toFixed(2)).join(',');
 }
 function refTrack(ph){
-  const key=ph.start.toFixed(3)+'|'+ph.end.toFixed(3);
+  const key=ph.start.toFixed(3)+'|'+ph.end.toFixed(3)+'|'+(ph.notesV||0);
   if(ph.ref&&ph.ref.key===key)return ph.ref.tr;
-  const a=Math.round(ph.start*S.sr),b=Math.round(ph.end*S.sr);
-  const tr=pitchTrack(S.det.subarray(a,b),S.sr);
+  let tr;
+  if(S.nn&&S.nnFor===S.stem){
+    const f0=Math.max(0,Math.round(ph.start/0.01)),f1=Math.min(S.nn.midi.length,Math.round(ph.end/0.01)),n=Math.max(0,f1-f0);
+    const midi=S.nn.midi.slice(f0,f0+n),rms=S.nn.rms.slice(f0,f0+n),conf=S.nn.conf.slice(f0,f0+n);let mx=0;for(let i=0;i<n;i++)if(rms[i]>mx)mx=rms[i];
+    tr={midi,rms,conf,hop:0.01,dur:n*0.01,mx,nn:true};
+  }else{
+    const a=Math.round(ph.start*S.sr),b=Math.round(ph.end*S.sr);
+    tr=pitchTrack(S.det.subarray(a,b),S.sr);
+  }
   // with a separated voice: ignore frames where the voice is not really there (instrument bleed between words shows up as low notes)
-  if(S.stem&&S.dom){const f0=ph.start/S.hop;for(let f=0;f<tr.midi.length;f++){const g=Math.round(f0+f*tr.hop/S.hop);const dm=S.dom[g];if((dm!==undefined&&dm<-12)||tr.rms[f]<tr.mx*0.12)tr.midi[f]=NaN}}
+  if(S.stem&&S.dom){const f0=ph.start/S.hop,gate=tr.nn?0.06:0.12;for(let f=0;f<tr.midi.length;f++){const g=Math.round(f0+f*tr.hop/S.hop);const dm=S.dom[g];if((dm!==undefined&&dm<-12)||tr.rms[f]<tr.mx*gate)tr.midi[f]=NaN}}
+  if(ph.notes){
+    // the teacher's corrected melody replaces the detected pitch inside the phrase: flat notes, nothing between them
+    const midi=new Float32Array(tr.midi.length).fill(NaN);
+    for(const n of ph.notes){const a=Math.max(0,Math.round((n.t0-ph.start)/tr.hop)),b=Math.min(midi.length,Math.round((n.t1-ph.start)/tr.hop));for(let f=a;f<b;f++)midi[f]=n.m}
+    tr={midi,rms:tr.rms,conf:tr.conf,hop:tr.hop,dur:tr.dur,mx:tr.mx,nn:tr.nn,edited:true};
+  }
   ph.ref={key,tr};return tr;
 }
+function noteEditKey(ph){return ph.start.toFixed(3)+'|'+ph.end.toFixed(3)+'|'+(ph.notesV||0)}
+function setEdit(on){
+  S.editNotes=on;S.noteSel=null;document.body.classList.toggle('edit-on',on);
+  $('#bEdit').classList.toggle('on',on);$('#bEdit').textContent=on?'✓ Fet d’editar':'✎ Edita les notes';
+  $('#bEditDel').hidden=!on;$('#bEditReset').hidden=!on;$('#editHint').hidden=!on;
+  if(on)cancel();drawCompare();
+}
+const absNotes=ph=>ph.notes?ph.notes.map(n=>({t0:n.t0,t1:n.t1,m:n.m})):noteSeg(refFor(ph,0)).map(n=>({t0:n.t0+ph.start,t1:n.t1+ph.start,m:n.m}));
+function editStart(ph){if(!ph.notes)ph.notes=absNotes(ph)}
+function editCommit(ph){
+  ph.notes.sort((a,b)=>a.t0-b.t0);ph.notesV=(ph.notesV||0)+1;ph.ref=null;ph.refS=null;
+  ph.notes=noteSeg(refFor(ph,0)).map(n=>({t0:n.t0+ph.start,t1:n.t1+ph.start,m:n.m}));ph.ref=null;ph.refS=null;   // normalised through the same segmentation
+  for(const t of ph.takes){t.autoOff=null;compareData(ph,t)}
+  saveSoon();renderPhrases();renderDesk();drawCompare();
+}
+function editDelete(){const ph=curPh();if(!ph||S.noteSel==null)return;editStart(ph);const k=stageKey(ph);const n=S.cmpGeom.notes[S.noteSel];if(!n)return;
+  ph.notes=ph.notes.filter(x=>!(Math.abs(x.t0-(n.t0+ph.start))<0.011&&x.m===n.m-k));S.noteSel=null;editCommit(ph)}
+$('#bEdit').addEventListener('click',()=>setEdit(!S.editNotes));
+$('#bEditDel').addEventListener('click',editDelete);
+$('#bEditReset').addEventListener('click',()=>{const ph=curPh();if(!ph)return;ph.notes=null;ph.notesV=(ph.notesV||0)+1;ph.ref=null;ph.refS=null;S.noteSel=null;for(const t of ph.takes){t.autoOff=null;compareData(ph,t)}saveSoon();renderPhrases();renderDesk();drawCompare();toast('Melodia detectada restaurada.')});
+document.addEventListener('keydown',e=>{if(!S.editNotes||e.target.closest('input,select,textarea'))return;if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();editDelete()}});
 
 /* ---------- tempo and beats (onset envelope + autocorrelation + dynamic-programming beat tracker) ---------- */
 function onsetEnvelope(L,R,sr){
@@ -895,8 +1089,9 @@ function buildSession(){
     return {v:1,savedAt:Date.now(),name:S.name,file:S.file,fileName:S.file.name,
       stem:S.stem?{L:toI16(S.stem.L),R:S.stem.L===S.stem.R?null:toI16(S.stem.R)}:null,sepBy:S.sepBy,approx:!!S.approx,
       period:S.period||null,dbShift:S.dbShift||0,meter:$('#meter').value,
-      phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,lyr:p.lyr||'',takes:p.takes.map(takeOut)})),
+      phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,lyr:p.lyr||'',notes:p.notes||null,takes:p.takes.map(takeOut)})),
       ghosts:S.ghosts||[],range:S.range||null,
+      nn:(S.nn&&S.nnFor===S.stem)?{midi:Int16Array.from(S.nn.midi,v=>isNaN(v)?-32768:Math.round(v*100)),conf:Int16Array.from(S.nn.conf,v=>Math.round(v*1000)),rms:Int16Array.from(S.nn.rms,v=>Math.round(Math.min(1,v/(S.nn.mx||1))*30000)),mx:S.nn.mx,note:S.nnNote||''}:null,
       fullTakes:(S.fullTakes||[]).map(f=>({n:f.n,data:toI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,semis:f.semis||0,id:f.id})),
       opts:{back:$('#oBack').value,pre:$('#oPre').value,level:$('#oLevel').value,verb:$('#oVerb').value,times:$('#oTimes').value,gyou:S.gyou,gbase:S.gbase,semis:S.semis}};
 }
@@ -937,11 +1132,11 @@ $('#fSess').addEventListener('change',e=>{const f=e.target.files[0];e.target.val
 $('#bExport').addEventListener('click',exportSession);
 async function offerResume(){
   const sess=await idbGet('last');const b=$('#bResume');
-  if(!sess||!sess.file){b.hidden=true;return}
+  if(!sess||!sess.file){b.hidden=true;$('#bResume2').hidden=true;return}
   const ago=Math.round((Date.now()-sess.savedAt)/60000),when=ago<1?'ara mateix':ago<60?'fa '+ago+' min':ago<1440?'fa '+Math.round(ago/60)+' h':'fa '+Math.round(ago/1440)+' dies';
   const nTakes=sess.phrases.reduce((a,p)=>a+p.takes.length,0);
   b.textContent='Recupera la sessió anterior: «'+sess.name+'» ('+sess.phrases.length+(sess.phrases.length===1?' frase, ':' frases, ')+nTakes+(nTakes===1?' presa, ':' preses, ')+when+')';
-  b.hidden=false;b.onclick=()=>resumeSession(sess);
+  b.hidden=false;b.onclick=()=>resumeSession(sess);const b2=$('#bResume2');b2.textContent=b.textContent;b2.hidden=false;
 }
 async function resumeSession(sess){
   const b=$('#bResume');b.disabled=true;b.textContent='Recuperant «'+sess.name+'»…';
@@ -950,18 +1145,22 @@ async function resumeSession(sess){
     cancel();S.mix=toLR(dec);S.file=sess.file;S.name=sess.name;S.demo=false;S.approx=sess.approx;S.sepInfo=null;
     if(sess.stem){const L=fromI16(sess.stem.L),R=sess.stem.R?fromI16(sess.stem.R):L;S.stem={L,R,sr:44100};S.sepBy=sess.sepBy||'ai'}else{S.stem=null;S.sepBy=null}
     S.inst=null;
+    if(sess.nn&&sess.nn.midi&&S.stem){const n=sess.nn.midi.length,midi=new Float32Array(n),conf=new Float32Array(n),rms=new Float32Array(n);
+      for(let i=0;i<n;i++){midi[i]=sess.nn.midi[i]===-32768?NaN:sess.nn.midi[i]/100;conf[i]=sess.nn.conf[i]/1000;rms[i]=sess.nn.rms[i]/30000*(sess.nn.mx||1)}
+      S.nn={midi,conf,rms,hop:0.01,dur:n*0.01,mx:sess.nn.mx||1,nn:true};S.nnFor=S.stem;S.nnNote=sess.nn.note||'Melodia llegida amb el model neuronal (sessió desada).'}
+    else{S.nn=null;S.nnFor=null}
     renderStart();
     // rebuild analysis, then put the saved phrases back
-    S.phrases=[];loadSong(false);
+    S.phrases=[];loadSong(true);
     if(sess.period&&S.onset){S.period=sess.period;$('#meter').value=sess.meter||'4';analyseRhythm(true);S.dbShift=sess.dbShift||0}
-    S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,lyr:p.lyr||'',ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,rate:t.rate||1,semis:t.semis||0,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
+    S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,lyr:p.lyr||'',notes:p.notes||null,notesV:p.notes?1:0,ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,rate:t.rate||1,semis:t.semis||0,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
     S.ghosts=sess.ghosts||[];
     S.fullTakes=(sess.fullTakes||[]).map(f=>({id:f.id||uid++,n:f.n,data:fromI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,semis:f.semis||0,phr:[]}));
     S.fullTake=S.fullTakes[S.fullTakes.length-1]||null;$('#bFullPlay').hidden=!S.fullTake;
     if(sess.opts){$('#oBack').value=sess.opts.back;$('#oPre').value=sess.opts.pre;$('#oLevel').value=sess.opts.level;$('#oVerb').value=sess.opts.verb;$('#oTimes').value=sess.opts.times;
       if(sess.opts.gyou!=null){S.gyou=sess.opts.gyou;$('#gYou').value=S.gyou;$('#gYouV').textContent=Math.round(S.gyou*100)+'%'}
       if(sess.opts.gbase!=null){S.gbase=sess.opts.gbase;$('#gBase').value=S.gbase;$('#gBaseV').textContent=Math.round(S.gbase*100)+'%'}}
-    for(const p of S.phrases)for(const t of p.takes){t.track=pitchTrack(t.data,t.sr);compareData(p,t)}
+    for(const p of S.phrases)for(const t of p.takes){t.track=pitchTrack(t.data,t.sr);compareData(p,t)}   // quick first pass; the network redoes them in nnSongPass
     S.cur=S.phrases.length?0:-1;S.take=null;
     $('#work').hidden=!(S.stem||S.approx);$('#fullRow').hidden=!(S.stem||S.approx);$('#rangePanel').hidden=!(S.stem||S.approx);
     S.range=sess.range||null;rangeReset();
@@ -977,7 +1176,15 @@ function renderStart(){const has=!!S.mix;$('#startPanel').hidden=has;$('#songPan
 /* ---------- views (tabs) ---------- */
 let VIEW='song';
 const viewReady=v=>v==='song'||v==='help'||!!(S.mix&&(S.stem||S.approx));
-function setTabs(){document.querySelectorAll('.tab').forEach(b=>b.disabled=!viewReady(b.dataset.view));if(!viewReady(VIEW))showView('song')}
+function setTabs(){
+  const ready=viewReady('sing');
+  document.querySelectorAll('.tab').forEach(b=>{b.disabled=!viewReady(b.dataset.view);b.classList.toggle('ready',ready)});
+  let hide=false;try{hide=localStorage.getItem('mirall-prep-hidden')==='1'}catch(e){}
+  $('#prep').hidden=!ready||!S.stem||hide;
+  if(!viewReady(VIEW))showView('song');
+  else if(document.body.classList.contains('simple')&&VIEW==='song'&&ready)showView('sing');
+}
+$('#prepX').addEventListener('click',()=>{try{localStorage.setItem('mirall-prep-hidden','1')}catch(e){}$('#prep').hidden=true});
 function showView(v){
   if(!viewReady(v))v='song';VIEW=v;
   document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v'+v[0].toUpperCase()+v.slice(1)));
@@ -1090,6 +1297,7 @@ function loadSong(keepPhrases){
   renderSep();
   renderAll();
   setTabs();if(ready&&!keepPhrases&&!S.demo)showView('sing');else if(!ready)showView('song');
+  if(S.stem&&!S.demo&&!(S.nn&&S.nnFor===S.stem)){S.nn=null;nnSongPass({redetect:!keepPhrases})}
 }
 $('#fMix').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';loadMixFile(f)});
 $('#fStem').addEventListener('change',async e=>{
@@ -1201,7 +1409,8 @@ function renderSep(){
   $('#bSep').hidden=done||sepBusy;$('#lStem').hidden=done||sepBusy;$('#bApprox').hidden=done||sepBusy||S.approx;
   $('#sepDl').hidden=!done;
   if(!sepBusy&&!done&&IS_FILE&&IS_SAFARI){sepUI('Safari sol bloquejar la separació quan l’eina s’obre des d’un fitxer del disc. Obre aquest mateix fitxer amb Google Chrome (botó dret › Obre amb › Google Chrome).',null);return}
-  if(!sepBusy)sepUI(done?(S.sepBy==='ai'?(S.sepInfo||'Veu separada amb IA.'):'Veu separada a partir de la pista que has carregat. Les frases i la melodia surten només d’aquesta pista.')
+  if(S.nnBusy)return;
+  if(!sepBusy)sepUI(done?((S.sepBy==='ai'?(S.sepInfo||'Veu separada amb IA.'):'Veu separada a partir de la pista que has carregat. Les frases i la melodia surten només d’aquesta pista.')+(S.nnNote?' '+S.nnNote:''))
     :S.approx?'Estàs treballant sense separar la veu. Pots separar-la quan vulguis: les frases es tornaran a detectar sobre la veu.'
     :'Les frases i la melodia es treuen només de la pista de veu. Es fa al teu ordinador; la primera vegada descarrega el model (uns 170 MB) i després el recorda.',null);
 }
@@ -1520,7 +1729,7 @@ async function doRecord(ph,id){
   const n=(ph.takes.reduce((m,t)=>Math.max(m,t.n),0))+1;
   const take={id:uid++,n,data,sr,withAcc,mode,rate,semis:S.semis,lat:withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0,nudge:0,track:null,score:null};
   setPhase(null,'Analitzant…');await sleep(20);
-  take.track=pitchTrack(take.data,take.sr);
+  take.track=await trackFor(take.data,take.sr);
   ph.takes.push(take);S.take=take;saveSoon();
   const cd=compareData(ph,take);
   setPhase(null,cd&&cd.n>10?'Presa '+n+' desada. Mira la comparació.':'Presa '+n+' desada, però gairebé no hi he detectat veu. Comprova el nivell del micròfon.');
@@ -1635,12 +1844,13 @@ async function rangeCycle(){
   const sr=c.sampleRate,tot=ch.reduce((a,x)=>a+x.d.length,0),all=new Float32Array(tot);let o=0;for(const x of ch){all.set(x.d,o);o+=x.d.length}
   const a=ch.length?Math.max(0,Math.round((t0-ch[0].t)*sr)):0,data=all.slice(a,a+Math.round((endT-t0)*sr));
   rangeUI('busy',{text:'Mirant com ha anat…'});await sleep(20);if(id!==runId)return;
-  rangeVerdict(rangeCheck(ph,data,sr,c));
+  const v=await rangeCheck(ph,data,sr,c);if(id!==runId)return;rangeVerdict(v);
 }
 // did the recording reach the phrase's extreme note (in whatever octave the singer uses)?
-function rangeCheck(ph,data,sr,c){
+async function rangeCheck(ph,data,sr,c){
   if(data.length<sr*0.5)return{heard:false};
   const take={data,sr,withAcc:true,mode:'guide',rate:1,semis:RG.cur,lat:(c.outputLatency||0)+(c.baseLatency||0)+0.01,nudge:0,track:null,score:null};
+  take.track=await trackFor(data,sr);
   const cd=compareData(ph,take);
   if(cd.n<10)return{heard:false};
   const d=RG.dir,r=RG.pick.r,extRef=(d>0?r.hi:r.lo)+RG.cur;
@@ -1658,7 +1868,7 @@ function rangeCheck(ph,data,sr,c){
   if(!isFinite(ext))return{heard:false};
   // what was sung while the original holds its extreme note: the median pitch there must come within 90 cents of the target
   let sung=NaN,reached=false;
-  if(inside.length>=5){const vs=inside.map(x=>x.v).sort((a,b)=>a-b);sung=vs[vs.length>>1];reached=d>0?sung>=target-0.9:sung<=target+0.9;ext=d>0?Math.max(ext,Math.round(sung)):Math.min(ext,Math.round(sung))}
+  if(inside.length>=5){const vs=inside.map(x=>x.v).sort((a,b)=>a-b);sung=vs[vs.length>>1];reached=d>0?sung>=target-0.9:sung<=target+0.9;ext=Math.round(sung)}
   const miss=d>0?target-(isNaN(sung)?ext:sung):(isNaN(sung)?ext:sung)-target;
   return{heard:true,oct,target,ext,sung,miss,reached,skipped:inside.length<5,score:take.score==null?0:take.score};
 }
@@ -1791,7 +2001,7 @@ async function fullStop(){
     const a=Math.max(0,songToIdx(ph.start-0.25)),b=Math.min(all.length,songToIdx(ph.end+1.0));if(b-a<sr*0.5)continue;
     const n=(ph.takes.reduce((m,t)=>Math.max(m,t.n),0))+1;
     const take={id:uid++,n,data:all.slice(a,b),sr,withAcc:true,mode:'full',semis:fr.semis||0,lat:fr.lat+0.25,nudge:0,track:null,score:null};
-    take.track=pitchTrack(take.data,sr);take.full=full.id;ph.takes.push(take);compareData(ph,take);made++;full.phr.push(ph.id);
+    take.track=await trackFor(take.data,sr);take.full=full.id;ph.takes.push(take);compareData(ph,take);made++;full.phr.push(ph.id);
   }
   const first=S.phrases.findIndex(p=>p.takes.some(t=>t.full===full.id));
   if(first>=0){S.cur=first;S.take=S.phrases[first].takes.find(t=>t.full===full.id)}else S.take=null;
@@ -2054,6 +2264,8 @@ function drawCompare(){
     }
   }
   S.cmpGeom={padL,padR,T,w,top,pH,lo,hi,bh,notes};
+  if(S.editNotes&&S.noteSel!=null&&notes[S.noteSel]){const n=notes[S.noteSel],x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2;g.save();g.strokeStyle=STAGE.you;g.lineWidth=2.5;g.setLineDash([5,3]);rrect(g,x0-3,y-3,Math.max(4,x1-x0)+6,bh+6,(bh+6)/2);g.stroke();g.restore()}
+  if(ph.notes){g.font='11px '+tok('--body');g.textBaseline='top';g.fillStyle=STAGE.label;g.textAlign='right';g.fillText('melodia corregida',w-padR,top+2);g.textAlign='left'}
   if(S.noteHover!=null&&notes[S.noteHover]){const n=notes[S.noteHover],x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2;g.save();g.strokeStyle=STAGE.head;g.lineWidth=2;rrect(g,x0-2,y-2,Math.max(4,x1-x0)+4,bh+4,(bh+4)/2);g.stroke();g.restore()}
   if(S.notePlay&&notes[S.notePlay.i]){const n=notes[S.notePlay.i],x0=X(n.t0),x1=X(n.t1),y=Y(n.m)-bh/2;g.save();g.shadowColor=S.notePlay.who==='you'?STAGE.you:STAGE.hitGlow;g.shadowBlur=22;g.strokeStyle=S.notePlay.who==='you'?STAGE.you:'#FFF4C2';g.lineWidth=3;rrect(g,x0-2,y-2,Math.max(4,x1-x0)+4,bh+4,(bh+4)/2);g.stroke();g.restore()}
   if(ph.lyr){g.font='700 15px '+tok('--display');g.textBaseline='top';g.fillStyle='rgba(31,30,28,.85)';g.fillText(ph.lyr.length>90?ph.lyr.slice(0,88)+'…':ph.lyr,padL,top+2)}
@@ -2100,7 +2312,18 @@ function renderPhrases(){
   }).join('');
   const sel=$('#plist .sel');if(sel)sel.scrollIntoView({block:'nearest',inline:'nearest'});
 }
+function renderSnav(){
+  const n=S.phrases.length,i=S.cur;
+  $('#sPrev').disabled=i<=0;$('#sNext').disabled=i>=n-1;
+  $('#sdots').innerHTML=S.phrases.map((p,k)=>'<i class="'+(p.takes.length?'done ':'')+(k===i?'cur':'')+'" data-i="'+k+'" title="Frase '+(k+1)+(p.lyr?' · '+p.lyr:'')+'"></i>').join('');
+  const done=S.phrases.filter(p=>p.takes.length).length;
+  $('#sProg').textContent=n?('Frase '+(i+1)+' de '+n+(done?' · '+done+' cantad'+(done===1?'a':'es'):'')):'';
+}
+$('#sPrev').addEventListener('click',()=>{cancel();select(S.cur-1)});
+$('#sNext').addEventListener('click',()=>{cancel();select(S.cur+1)});
+$('#sdots').addEventListener('click',e=>{const d=e.target.closest('i');if(d){cancel();select(+d.dataset.i)}});
 function renderDesk(){
+  renderSnav();
   const ph=curPh();
   $('#pTitle').textContent=ph?(S.cur+1)+' de '+S.phrases.length:'Cap frase';
   $('#pTime').textContent=ph?fmt(ph.start)+' – '+fmt(ph.end)+' · '+dec(ph.end-ph.start)+' s':'Afegeix una frase des de la forma d’ona.';
@@ -2115,7 +2338,7 @@ function renderDesk(){
   let html='';
   if(!ph)html='';
   else if(S.armed)html='';
-  else if(!take)html='<p class="empty">Encara no t’has gravat en aquesta frase. Les barres són les notes de l’original; prem <b>Repeteix</b> o <b>Cicle</b> per afegir-hi la teva.</p>';
+  else if(!take)html='<p class="empty">Encara no t’has gravat en aquesta frase. Les barres són les notes de l’original; prem <b>'+(document.body.classList.contains('simple')?'Canta-la':'Repeteix</b> o <b>Cicle')+'</b> per afegir-hi la teva.</p>';
   else{
     const cd=compareData(ph,take);
     if(cd.n<=10)html='<p class="empty">No he detectat prou veu a la presa '+take.n+' per comparar-la. Comprova el micròfon i torna-ho a provar.</p>';
@@ -2225,11 +2448,12 @@ document.querySelectorAll('[data-n]').forEach(b=>b.addEventListener('click',()=>
 $('#eSplit').addEventListener('click',()=>{
   const ph=curPh();if(!ph)return;const c=S.cursor;
   if(c<ph.start+0.3||c>ph.end-0.3){toast('Posa el cursor dins de la frase seleccionada (clica a la forma d’ona) i torna-ho a provar.');return}
-  const np={id:uid++,start:c,end:ph.end,raw:null,takes:[],ref:null};ph.end=c;ph.raw=null;S.phrases.splice(S.cur+1,0,np);renderAll();
+  const np={id:uid++,start:c,end:ph.end,raw:null,takes:[],ref:null,notes:ph.notes?ph.notes.map(n=>({...n})):null,notesV:ph.notes?1:0};ph.end=c;ph.raw=null;ph.ref=null;ph.refS=null;S.phrases.splice(S.cur+1,0,np);renderAll();
 });
 $('#eMerge').addEventListener('click',()=>{
   const ph=curPh(),nx=S.phrases[S.cur+1];if(!ph||!nx)return;
-  ph.end=nx.end;ph.raw=null;ph.takes.push(...nx.takes);if(nx.lyr)ph.lyr=(ph.lyr?ph.lyr+' / ':'')+nx.lyr;S.phrases.splice(S.cur+1,1);renderAll();
+  if(ph.notes||nx.notes){const a=absNotes(ph),b=absNotes(nx);ph.notes=a.concat(b);ph.notesV=(ph.notesV||0)+1}
+  ph.end=nx.end;ph.raw=null;ph.ref=null;ph.refS=null;ph.takes.push(...nx.takes);if(nx.lyr)ph.lyr=(ph.lyr?ph.lyr+' / ':'')+nx.lyr;S.phrases.splice(S.cur+1,1);renderAll();
 });
 $('#eDel').addEventListener('click',()=>{if(!curPh())return;cancel();S.phrases.splice(S.cur,1);S.cur=Math.min(S.cur,S.phrases.length-1);S.take=null;renderAll()});
 $('#eAdd').addEventListener('click',()=>{
@@ -2338,7 +2562,19 @@ function stageHit(e){
   gm.notes.forEach((n,i)=>{const ny=gm.top+(gm.hi-n.m)*row;if(t>=n.t0&&t<=n.t1&&Math.abs(y-ny)<=gm.bh/2+3)note=i});
   return{t,note};
 }
-cvC.addEventListener('pointermove',e=>{const h=stageHit(e);const i=h?h.note:-1;if(i!==S.noteHover){S.noteHover=i<0?null:i;cvC.style.cursor=i<0?'default':'pointer';if(!S.play&&!S.tplay&&!S.recInfo)drawCompare()}});
+let editDrag=null;
+cvC.addEventListener('pointerdown',e=>{
+  if(!S.editNotes)return;const h=stageHit(e),ph=curPh();if(!h||!ph)return;
+  if(h.note>=0){S.noteSel=h.note;const gm=S.cmpGeom,r=cvC.getBoundingClientRect();editDrag={i:h.note,y0:(e.clientY-r.top)*(gm.w/r.width),m0:gm.notes[h.note].m,row:gm.pH/(gm.hi-gm.lo),moved:0,r};cvC.setPointerCapture(e.pointerId)}
+  else S.noteSel=null;
+  drawCompare();
+});
+cvC.addEventListener('pointermove',e=>{
+  if(editDrag){const gm=S.cmpGeom,ph=curPh();if(!gm||!ph)return;const y=(e.clientY-editDrag.r.top)*(gm.w/editDrag.r.width),dm=Math.round((editDrag.y0-y)/editDrag.row);
+    if(dm!==editDrag.moved){editStart(ph);const k=stageKey(ph),n=gm.notes[editDrag.i],tgt=ph.notes.find(x=>Math.abs(x.t0-(n.t0+ph.start))<0.011);if(tgt){tgt.m=editDrag.m0-k+dm;editDrag.moved=dm;ph.notesV=(ph.notesV||0)+1;ph.ref=null;ph.refS=null;drawCompare();const j=S.cmpGeom.notes.findIndex(x=>Math.abs(x.t0-n.t0)<0.011);if(j>=0){editDrag.i=j;S.noteSel=j}}}
+    return}
+  const h=stageHit(e);const i=h?h.note:-1;if(i!==S.noteHover){S.noteHover=i<0?null:i;cvC.style.cursor=S.editNotes?(i<0?'crosshair':'ns-resize'):(i<0?'default':'pointer');if(!S.play&&!S.tplay&&!S.recInfo)drawCompare()}});
+cvC.addEventListener('pointerup',e=>{if(!editDrag)return;const ph=curPh();const moved=editDrag.moved;editDrag=null;if(ph&&moved)editCommit(ph)});
 cvC.addEventListener('pointerleave',()=>{if(S.noteHover!=null){S.noteHover=null;drawCompare()}});
 // click a note bar: hear that note from the original, then from your take; click elsewhere: choose where playback starts
 async function playNote(i){
@@ -2362,10 +2598,16 @@ async function playNote(i){
 }
 cvC.addEventListener('click',e=>{
   const h=stageHit(e);if(!h)return;
+  if(S.editNotes)return;
   if(h.note>=0){playNote(h.note);const n=S.cmpGeom.notes[h.note],pc=((n.m%12)+12)%12;toast('Nota '+(h.note+1)+' ('+NOTE[pc]+(Math.floor(n.m/12)-1)+'): primer l’original'+(S.take?', després tu.':'.'));return}
   S.cmpCursor=(h.t<=0.03)?null:Math.max(0,Math.min(S.cmpGeom.T,h.t));cancel();drawCompare();
 });
-cvC.addEventListener('dblclick',()=>{S.cmpCursor=null;drawCompare()});
+cvC.addEventListener('dblclick',e=>{
+  if(S.editNotes){const h=stageHit(e),ph=curPh();if(!h||!ph||h.note>=0)return;
+    const gm=S.cmpGeom,r=cvC.getBoundingClientRect(),y=(e.clientY-r.top)*(gm.w/r.width),m=Math.round(gm.hi-(y-gm.top)/(gm.pH/(gm.hi-gm.lo))),k=stageKey(ph);
+    editStart(ph);const t0=Math.max(0,h.t-0.15),t1=Math.min(gm.T,h.t+0.15);if(t1-t0<0.09)return;
+    const A=t0+ph.start,B=t1+ph.start;ph.notes=ph.notes.filter(x=>x.t1<=A||x.t0>=B);ph.notes.push({t0:A,t1:B,m:m-k});editCommit(ph);S.noteSel=S.cmpGeom.notes.findIndex(x=>Math.abs(x.t0-t0)<0.011);drawCompare();return}
+  S.cmpCursor=null;drawCompare()});
 
 function download(t,ph){saveBlob(wavBlob([t.data],t.sr),S.name+' - frase '+(S.phrases.indexOf(ph)+1)+' - presa '+t.n+'.wav')}
 
@@ -2397,8 +2639,15 @@ document.addEventListener('keydown',e=>{
 let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{S.peaks=null;S.vpeaks=null;S.mpeaks=null;drawSongStatic();drawSong();drawMini();drawCompare()},60)}).observe(document.body);
 
 // open with the example loaded so the tool shows what it does
-function setMode(simple){document.body.classList.toggle('simple',simple);$('#bMode').textContent=simple?'Mode complet':'Mode senzill';try{localStorage.setItem('mirall-mode',simple?'simple':'full')}catch(e){}if(S.mix){renderAll();drawCompare()}}
-$('#bMode').addEventListener('click',()=>setMode(!document.body.classList.contains('simple')));
+function setMode(simple){
+  document.body.classList.toggle('simple',simple);
+  document.querySelectorAll('#bMode button').forEach(b=>b.classList.toggle('on',(b.dataset.mode==='simple')===simple));
+  try{localStorage.setItem('mirall-mode',simple?'simple':'full')}catch(e){}
+  if(simple&&S.editNotes)setEdit(false);
+  setTabs();if(S.mix){renderAll();drawCompare();if(simple&&VIEW==='song'&&viewReady('sing'))showView('sing')}
+}
+document.querySelectorAll('#bMode button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode==='simple')));
+$('#bResume2').addEventListener('click',()=>$('#bResume').click());
 (()=>{let m='simple';try{m=localStorage.getItem('mirall-mode')||'simple'}catch(e){}setMode(m==='simple')})();
 renderStart();offerResume();
 window.addEventListener('beforeunload',e=>{if(S.mix&&!S.demo){e.preventDefault();e.returnValue=''}});
