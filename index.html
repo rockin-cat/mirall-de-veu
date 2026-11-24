@@ -58,6 +58,10 @@ body.simple .student{display:flex}
 .st-head h1 small{font-size:20px;color:var(--muted);font-weight:600}
 .st-lyr{font-size:20px;color:#4d4843}
 .st-lyr.big{font-family:var(--display);font-size:32px;line-height:1.15;color:var(--ink)}
+.ladder{display:inline-flex;align-items:center;gap:5px;font-size:14px;color:var(--muted);margin-left:auto;align-self:center}
+.ladder i{display:block;width:22px;height:8px;border-radius:4px;background:var(--line)}
+.ladder i.past{background:#c9c3b8}.ladder i.cur{background:var(--rk-groc)}
+.ladder span{margin-left:6px}
 .pill{display:inline-flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:19px;padding:10px 16px;border-radius:999px;align-self:center}
 .pill.listen{background:var(--good)}.pill.rec{background:var(--you)}.pill.wait{background:#8a8580}
 .pill i{display:block;width:12px;height:12px;border-radius:50%;background:#fff}
@@ -1160,11 +1164,11 @@ const fromI16=a=>{const o=new Float32Array(a.length);for(let i=0;i<a.length;i++)
 let saveT=null,saving=false;
 function saveSoon(){if(!S.mix||S.demo||!S.file)return;clearTimeout(saveT);saveT=setTimeout(saveSession,1500)}
 function buildSession(){
-    const takeOut=t=>({n:t.n,data:toI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,rate:t.rate||1,semis:t.semis||0,lat:t.lat,nudge:t.nudge,full:t.full||null});
+    const takeOut=t=>({n:t.n,data:toI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,rate:t.rate||1,semis:t.semis||0,lat:t.lat,nudge:t.nudge,full:t.full||null,lvl:t.lvl==null?null:t.lvl});
     return {v:1,savedAt:Date.now(),name:S.name,file:S.file,fileName:S.file.name,
       stem:S.stem?{L:toI16(S.stem.L),R:S.stem.L===S.stem.R?null:toI16(S.stem.R)}:null,sepBy:S.sepBy,approx:!!S.approx,
       period:S.period||null,dbShift:S.dbShift||0,meter:$('#meter').value,
-      phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,lyr:p.lyr||'',notes:p.notes||null,takes:p.takes.map(takeOut)})),
+      phrases:S.phrases.map(p=>({start:p.start,end:p.end,raw:p.raw,lyr:p.lyr||'',notes:p.notes||null,lvl:p.lvl==null?null:p.lvl,takes:p.takes.map(takeOut)})),history:S.history||[],
       ghosts:S.ghosts||[],range:S.range||null,lyrics:S.lyrics||'',
       nn:(S.nn&&S.nnFor===S.stem)?{midi:Int16Array.from(S.nn.midi,v=>isNaN(v)?-32768:Math.round(v*100)),conf:Int16Array.from(S.nn.conf,v=>Math.round(v*1000)),rms:Int16Array.from(S.nn.rms,v=>Math.round(Math.min(1,v/(S.nn.mx||1))*30000)),mx:S.nn.mx,note:S.nnNote||''}:null,
       fullTakes:(S.fullTakes||[]).map(f=>({n:f.n,data:toI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,semis:f.semis||0,id:f.id})),
@@ -1228,7 +1232,8 @@ async function resumeSession(sess){
     // rebuild analysis, then put the saved phrases back
     S.phrases=[];loadSong(true);
     if(sess.period&&S.onset){S.period=sess.period;$('#meter').value=sess.meter||'4';analyseRhythm(true);S.dbShift=sess.dbShift||0}
-    S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,lyr:p.lyr||'',notes:p.notes||null,notesV:p.notes?1:0,ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,rate:t.rate||1,semis:t.semis||0,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
+    S.history=sess.history||[];
+    S.phrases=sess.phrases.map(p=>({id:uid++,start:p.start,end:p.end,raw:p.raw||null,lyr:p.lyr||'',notes:p.notes||null,notesV:p.notes?1:0,lvl:p.lvl==null?null:p.lvl,ref:null,takes:p.takes.map(t=>({id:uid++,n:t.n,data:fromI16(t.data),sr:t.sr,withAcc:t.withAcc,mode:t.mode,lvl:t.lvl==null?null:t.lvl,rate:t.rate||1,semis:t.semis||0,lat:t.lat,nudge:t.nudge||0,full:t.full||null,track:null,score:null}))}));
     S.ghosts=sess.ghosts||[];
     S.fullTakes=(sess.fullTakes||[]).map(f=>({id:f.id||uid++,n:f.n,data:fromI16(f.data),sr:f.sr,from:f.from,to:f.to,lat:f.lat,semis:f.semis||0,phr:[]}));
     S.fullTake=S.fullTakes[S.fullTakes.length-1]||null;$('#bFullPlay').hidden=!S.fullTake;
@@ -1783,11 +1788,12 @@ async function doRecord(ph,id){
   const c=ac(),mode=$('#oBack').value,withAcc=mode!=='none',rate=rateOpt(),dur=(ph.end-ph.start)/rate;
   S.armed=true;S.take=null;S.cmpCursor=null;renderDesk();
   const en=entryFor(ph),lead=(ph.start-en.from)/rate;
-  if(withAcc&&rate<1){setPhase('rec','Preparant la base a '+Math.round(rate*100)+' %…');await sleep(10);segmentStretched(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?0.3:0,1,ph.start,rate)}
+  if(withAcc&&rate<1){setPhase('rec','Preparant la base a '+Math.round(rate*100)+' %…');await sleep(10);segmentStretched(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?(S.guideGain!=null?S.guideGain:0.3):0,1,ph.start,rate)}
   let start=c.currentTime+0.15;
   if(!en.clicks.length&&lead<0.5){start+=0.9;setPhase('rec','Prepara’t…')}
   const t0=start+lead;
-  if(withAcc)playSegment(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?0.3:0,1,start,null,ph.start,rate);
+  const gg=S.guideGain!=null?S.guideGain:0.3;
+  if(withAcc)playSegment(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?gg:0,1,start,null,ph.start,rate);
   scheduleEntry(en,start,t0);
   setPhase('rec',lead>0.3?'Entra la base… compta i entra a temps':'Prepara’t…');
   const len=withAcc?dur+1.3:dur*1.3+1.6;   // keep recording a while after the phrase ends, so held last notes are not cut
@@ -1805,7 +1811,7 @@ async function doRecord(ph,id){
   const data=all.slice(a,a+want);
   if(data.length<sr*0.5){setPhase(null,'');return}
   const n=(ph.takes.reduce((m,t)=>Math.max(m,t.n),0))+1;
-  const take={id:uid++,n,data,sr,withAcc,mode,rate,semis:S.semis,lat:withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0,nudge:0,track:null,score:null};
+  const take={id:uid++,n,data,sr,withAcc,mode,rate,semis:S.semis,lat:withAcc?((c.outputLatency||0)+(c.baseLatency||0)+0.01):0,nudge:0,track:null,score:null,lvl:S.flowLvl==null?null:S.flowLvl};
   setPhase(null,'Analitzant…');await sleep(20);
   take.track=await trackFor(take.data,take.sr);
   ph.takes.push(take);S.take=take;saveSoon();
@@ -2283,7 +2289,7 @@ function youPoints(ph){
     }
     return pts;
   }
-  const take=S.take&&ph.takes.includes(S.take)?S.take:null;if(!take)return null;
+  const take=S.take&&ph.takes.includes(S.take)&&!S.hideTake?S.take:null;if(!take)return null;
   const cd=compareData(ph,take),pts=[];
   for(let f=0;f<cd.tk.midi.length;f++)pts.push({t:(f*cd.tk.hop-cd.off)*cd.rate,m:cd.tk.midi[f]-cd.oct});
   return pts;
@@ -2490,7 +2496,13 @@ function verdictFor(ph,take,cd){
 function renderAll(){drawSongStatic();drawSong();drawMini();renderPhrases();renderDesk();saveSoon()}
 
 /* ---------- student flow: Comença → (listen → sing → result 3 s) → next phrase … until the end or Pausa ---------- */
-const FL={state:'idle',token:0,repeated:false,queue:null,next:null,result:null,cd:0};
+const FL={state:'idle',token:0,repeated:false,queue:null,next:null,result:null,cd:0,review:false};
+// support levels while singing a phrase: 0 = with the full guide voice, 1 = quiet guide voice, 2 = base only
+const LVL=[{mode:'guide',g:1.0,name:'amb la veu'},{mode:'guide',g:0.3,name:'amb la veu fluixa'},{mode:'base',g:0,name:'tu sola'}];
+const phraseDone=ph=>ph.takes.some(t=>t.lvl===2&&t.score!=null&&t.score>=50);
+function flowLevelFor(ph){if(ph.lvl==null)ph.lvl=1;return ph.lvl}
+// spaced feedback: the number and the line show on the first two tries of a phrase, then every third
+const showFeedback=ph=>{const n=ph.takes.length;return n<=2||n%3===0};
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const studentOn=()=>document.body.classList.contains('simple')&&!!S.mix&&!!(S.stem||S.approx);
 let cvHome=null,cvNext=null;
@@ -2504,34 +2516,61 @@ function mountStudent(on){
 }
 const advanceMode=()=>{try{return localStorage.getItem('mirall-advance')||'auto'}catch(e){return'auto'}};
 function bestScore(ph){let b=null;for(const t of ph.takes)if(t.score!=null&&(b==null||t.score>b))b=t.score;return b}
-function nextInQueue(){if(FL.queue){while(FL.queue.length){const k=FL.queue.shift();if(k!==S.cur&&k<S.phrases.length)return k}return null}return S.cur+1<S.phrases.length?S.cur+1:null}
+function nextInQueue(){
+  if(FL.queue){
+    if(!phraseDone(S.phrases[S.cur])&&!FL.queue.includes(S.cur))FL.queue.push(S.cur);   // not finished yet: it comes round again
+    while(FL.queue.length){const k=FL.queue.shift();if(k<S.phrases.length&&!phraseDone(S.phrases[k]))return k}
+    return null;
+  }
+  return S.cur+1<S.phrases.length?S.cur+1:null;
+}
 async function flowStep(){
   if(!studentOn())return;
-  FL.token++;const tok=FL.token;cancel();FL.state='running';FL.result=null;FL.next=null;renderStudent();
-  $('#oTimes').value='1';
+  FL.token++;const tok=FL.token;cancel();FL.state='running';FL.result=null;FL.next=null;S.hideTake=false;
+  const ph0=curPh();if(!ph0){FL.state='idle';renderStudent();return}
+  const lvl=flowLevelFor(ph0),L=LVL[lvl];S.flowLvl=lvl;S.guideGain=L.g;$('#oBack').value=L.mode;$('#oTimes').value='1';
+  renderStudent();
   await cycle();
+  S.guideGain=null;S.flowLvl=null;
   if(tok!==FL.token)return;
   const ph=curPh(),take=S.take;
   if(!ph||!take){FL.state='paused';renderStudent();return}
   const v=verdictFor(ph,take);FL.result=v;FL.state='result';
-  const weak=!v.heard||v.frac<0.5,next=nextInQueue();
-  FL.next=next;FL.weak=weak;FL.cd=0;renderStudent();
+  const weak=!v.heard||v.frac<0.5;
+  // the ladder: good → less support next time (or next phrase when already alone); weak → more support next time
+  let nextLvl=lvl,next;
+  if(v.heard&&!weak){if(lvl<2){nextLvl=lvl+1;next=S.cur}else{nextLvl=2;next=nextInQueue()}}
+  else{nextLvl=Math.max(0,lvl-1);next=S.cur}
+  ph.lvl=nextLvl;
+  FL.next=next;FL.weak=weak;FL.cd=0;FL.shown=showFeedback(ph);S.hideTake=!FL.shown;
+  renderStudent();
   if(!v.heard){FL.state='paused';renderStudent();return}
-  if(weak||advanceMode()==='manual')return;                       // it waits for you: Torna-hi or Següent
-  // it went well: a quiet 5-second pause, then on
+  if(weak){
+    // hear it: the original, then you, then it waits
+    const r=playSegment(ph.start,ph.end,S.gv,S.ga),id=runId;
+    if(!await waitUntil(r.t+(ph.end-ph.start)+0.4,id))return;
+    if(tok!==FL.token)return;await playYou(take,ph,0);
+    return;
+  }
+  if(advanceMode()==='manual')return;
   const T=5000,t0=performance.now();FL.cd=1;renderStudentActions();
   while(performance.now()-t0<T){await sleep(100);if(tok!==FL.token)return;const bar=$('#stWait');if(bar)bar.style.width=(100*(1-(performance.now()-t0)/T))+'%'}
   FL.cd=0;
   if(next==null){flowFinal();return}
-  select(next);flowStep();
+  FL.state='running';FL.result=null;if(next!==S.cur)select(next);flowStep();
 }
-function flowPause(){FL.token++;cancel();FL.state='paused';FL.cd=0;renderStudent()}
+function flowPause(){FL.token++;cancel();FL.state='paused';FL.cd=0;S.hideTake=false;renderStudent()}
 function flowRetry(){flowStep()}
 function flowNext(){FL.token++;cancel();const nx=FL.next!=null?FL.next:nextInQueue();FL.next=null;if(nx==null){flowFinal();return}select(nx);flowStep()}
-function flowFinal(){FL.token++;cancel();FL.state='final';FL.queue=null;FL.cd=0;renderStudent()}
+function flowFinal(){FL.token++;cancel();FL.state='final';FL.queue=null;FL.cd=0;S.hideTake=false;
+  // remember how it went, for next time
+  const n=S.phrases.length,sung=S.phrases.filter(p=>p.takes.length).length,good=S.phrases.filter(p=>{const b=bestScore(p);return b!=null&&b>=50}).length;
+  S.history=S.history||[];const last=S.history[S.history.length-1];
+  if(!last||Date.now()-last.at>20*60*1000)S.history.push({at:Date.now(),n,sung,good});else Object.assign(last,{n,sung,good});
+  saveSoon();renderStudent()}
 function flowStart(){FL.queue=null;FL.repeated=false;flowStep()}
 async function flowListenYou(){const ph=curPh(),t=S.take;if(!ph||!t)return;FL.token++;cancel();FL.state='paused';renderStudent();await playYou(t,ph)}
-function flowReview(){const weak=S.phrases.map((p,i)=>[p,i]).filter(([p])=>{const b=bestScore(p);return b==null||b<50}).map(([,i])=>i);if(!weak.length){toast('Cap frase fluixa: totes per sobre de la meitat.');return}FL.queue=weak.slice(1);FL.repeated=false;select(weak[0]);flowStep()}
+function flowReview(){const weak=S.phrases.map((p,i)=>[p,i]).filter(([p])=>{const b=bestScore(p);return b==null||b<50}).map(([,i])=>i);if(!weak.length){toast('Cap frase fluixa: totes per sobre de la meitat.');return}FL.queue=weak.slice(1);weak.forEach(i=>{S.phrases[i].lvl=1});select(weak[0]);flowStep()}
 async function flowFull(){FL.token++;cancel();FL.state='full';renderStudent();S.cursor=Math.max(0,S.phrases[0].start-1);await fullStart()}
 function renderStudent(){
   const on=studentOn();mountStudent(on);$('#student').hidden=!on;if(!on)return;
@@ -2542,17 +2581,22 @@ function renderStudent(){
   const isFinal=FL.state==='final';
   $('#stStage').hidden=isFinal;$('#stCap').hidden=isFinal;$('#stFinal').hidden=!isFinal;
   if(!ph){h.innerHTML='';$('#stActions').innerHTML='';return}
+  const lv=ph.lvl==null?1:ph.lvl,ladder='<span class="ladder" title="Suport: primer amb la veu, després fluixa, després tu sola">'+LVL.map((L,k)=>'<i class="'+(k<lv?'past':k===lv?'cur':'')+'"></i>').join('')+'<span>'+LVL[lv].name+'</span></span>';
   if(FL.state==='running'){
-    const ph2=S.phase==='listen'?'<span class="pill listen"><i></i>Escolta</span>':S.phase==='rec'?'<span class="pill rec"><i></i>Ara canta tu</span>':'<span class="pill wait"><i></i>Un moment…</span>';
-    h.innerHTML=ph2+lyr;
+    const ph2=S.phase==='listen'?'<span class="pill listen"><i></i>Escolta</span>':S.phase==='rec'?'<span class="pill rec"><i></i>'+(lv===0?'Canta amb la veu':lv===1?'Ara canta tu':'Tu sola')+'</span>':'<span class="pill wait"><i></i>Un moment…</span>';
+    h.innerHTML=ph2+lyr+ladder;
   }else if(FL.state==='result'&&FL.result){
-    const v=FL.result;h.innerHTML=v.heard?'<span class="st-res"><em style="color:var(--'+(v.frac>=.75?'good':v.frac>=.5?'mid':'ink')+')">'+v.ok+'</em> de '+v.nn+' notes</span><span class="st-tip">'+v.tip+'</span>':'<span class="st-res">No t’he sentit</span><span class="st-tip">'+v.tip+'</span>';
+    const v=FL.result;
+    if(!v.heard)h.innerHTML='<span class="st-res">No t’he sentit</span><span class="st-tip">'+v.tip+'</span>';
+    else if(FL.shown)h.innerHTML='<span class="st-res"><em style="color:var(--'+(v.frac>=.75?'good':v.frac>=.5?'mid':'ink')+')">'+v.ok+'</em> de '+v.nn+' notes</span><span class="st-tip">'+v.tip+'</span>';
+    else h.innerHTML='<span class="st-res">'+(FL.weak?'Escolta: l’original, i després tu.':'Bé. Seguim.')+'</span><span class="st-tip">'+(FL.weak?'Fixa’t en què canvia i torna-hi.':(FL.next===S.cur?'Ara '+LVL[ph.lvl==null?1:ph.lvl].name+'.':''))+'</span>';
   }else if(FL.state==='full'){const nx=S.phrases[i+1];h.innerHTML='<span class="pill rec"><i></i>Canta</span>'+(ph.lyr?'<span class="st-lyr big">«'+esc(ph.lyr)+'»</span>':'<span class="st-lyr big">Frase '+(i+1)+'</span>')+(nx&&nx.lyr?'<span class="st-tip">després: «'+esc(nx.lyr)+'»</span>':'')}
   else if(isFinal){
     const scores=S.phrases.map(bestScore),weakN=S.phrases.map((p,k)=>[scores[k],k]).filter(([b])=>b==null||b<50).map(([,k])=>k+1);
     h.innerHTML='';
     const sung=S.phrases.filter(p=>p.takes.length).length;
-    $('#stFinal').innerHTML='<h1>'+(sung>=n?'Has cantat tota la cançó':'Has cantat '+sung+' de '+n+' frases')+'</h1><p>Cada barra és una frase: com més alta, més notes al lloc. Les grises són les que pots repassar.</p>'
+    const hist=S.history||[],first=hist.length>1?hist[0]:null,goodNow=S.phrases.filter(p=>{const b=bestScore(p);return b!=null&&b>=50}).length;
+    $('#stFinal').innerHTML='<h1>'+(sung>=n?'Has cantat tota la cançó':'Has cantat '+sung+' de '+n+' frases')+'</h1><p>'+(first&&goodNow>first.good?'<b>'+(goodNow-first.good)+' frase'+(goodNow-first.good===1?'':'s')+' més</b> bé que la primera vegada. ':'')+'Cada barra és una frase: com més alta, més notes al lloc. Les grises són les que pots repassar.</p>'
       +'<div class="st-bars" style="grid-template-columns:repeat('+n+',minmax(0,1fr))">'+S.phrases.map((p,k)=>{const b=scores[k];return'<button type="button" data-i="'+k+'" class="'+(b==null||b<50?'weak':'')+'" style="height:'+Math.max(8,Math.round((b==null?6:b)/100*180))+'px" aria-label="Frase '+(k+1)+(b==null?'':' · '+b+' %')+'" title="Frase '+(k+1)+(b==null?'':' · '+b+' % de notes')+'"></button>'}).join('')+'</div>'
       +'<div class="st-nums" style="grid-template-columns:repeat('+n+',minmax(0,1fr))">'+S.phrases.map((p,k)=>'<span>'+(k+1)+'</span>').join('')+'</div>';
     $('#stActions').innerHTML=(weakN.length?'<button class="bigbtn" type="button" data-a="review">Repassa les fluixes ('+weakN.join(', ')+')</button>':'<button class="bigbtn" type="button" data-a="restart">Torna-la a cantar</button>')
@@ -2560,9 +2604,10 @@ function renderStudent(){
     return;
   }else{
     const b=bestScore(ph);
-    h.innerHTML=(ph.lyr?'<span class="st-lyr big">«'+esc(ph.lyr)+'»</span>':'<h1>Frase '+(i+1)+' <small>de '+n+'</small></h1>')+(FL.state==='paused'?'<span class="st-tip">'+(S.take?'':'En pausa.')+'</span>':'');
+    h.innerHTML=(ph.lyr?'<span class="st-lyr big">«'+esc(ph.lyr)+'»</span>':'<h1>Frase '+(i+1)+' <small>de '+n+'</small></h1>')+(FL.state==='paused'?'<span class="st-tip">'+(S.take?'':'En pausa.')+'</span>'+ladder:'');
   }
-  $('#stCap').textContent=FL.state==='idle'?'Canta-la sencera: sona la cançó amb la veu fluixeta i la cantes tu, com un karaoke; al final veuràs quines frases et convé repassar. Frase per frase: sents una frase, la cantes, i si va bé passa sola a la següent.':FL.state==='paused'&&!S.take&&$('#status').textContent?$('#status').textContent:'';
+  const hist=S.history||[],lastH=hist.length?hist[hist.length-1]:null,ago=lastH?Math.round((Date.now()-lastH.at)/864e5):null;
+  $('#stCap').textContent=FL.state==='idle'?((lastH&&ago>=1?'L’última vegada ('+(ago===1?'ahir':'fa '+ago+' dies')+'): '+lastH.good+' de '+lastH.n+' frases bé. ':'')+'Canta-la sencera: sona la cançó amb la veu fluixeta i la cantes tu, com un karaoke; al final veuràs quines frases et convé repassar. Frase per frase: sents una frase, la cantes amb la veu i després tu sola, i si va bé passa a la següent.'):FL.state==='paused'&&!S.take&&$('#status').textContent?$('#status').textContent:'';
   renderStudentActions();
 }
 function renderStudentActions(){
@@ -2572,7 +2617,7 @@ function renderStudentActions(){
   else if(st==='running')a.innerHTML='<button class="midbtn" type="button" data-a="pause">❚❚ Pausa</button>';
   else if(st==='full')a.innerHTML='<button class="midbtn" type="button" data-a="stopfull">■ Atura</button>';
   else if(st==='result'){
-    const nx=FL.next,lbl=nx==null?'Resum':'Frase '+(nx+1);
+    const ph=curPh(),nx=FL.next,lbl=nx==null?'Resum':nx===S.cur?'Ara '+LVL[ph&&ph.lvl!=null?ph.lvl:1].name:'Frase '+(nx+1);
     if(FL.weak)a.innerHTML='<button class="bigbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="listen">Escolta-la</button><button class="midbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent →')+'</button>';
     else if(manual)a.innerHTML='<button class="bigbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent →')+'</button><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>';
     else a.innerHTML='<span class="st-wait" title="'+lbl+'"><i id="stWait"></i><span>'+lbl+'…</span></span><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="pause">Pausa</button>';
