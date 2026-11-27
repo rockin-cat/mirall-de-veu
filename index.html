@@ -48,8 +48,20 @@ body.simple .tab[data-view="song"].ready{display:none}
 /* ---- student flow: one action per screen, the loop runs on its own ---- */
 body.simple .work{display:none!important}
 body.simple .tabs,body.simple #bMode,body.simple #bExport,body.simple .loaders>label[for="fMix"],body.simple .statusbar{display:none!important}
-.student{display:none;flex:1;min-height:0;flex-direction:column;gap:14px}
+.student{display:none;flex:1;min-height:0;gap:16px}
 body.simple .student{display:flex}
+.st-main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:14px}
+.st-list{width:280px;flex:none;overflow:auto;display:flex;flex-direction:column;gap:2px;padding:4px 2px;border-right:1px solid var(--line);padding-right:10px}
+.st-li{display:grid;grid-template-columns:26px minmax(0,1fr) 18px;gap:8px;align-items:baseline;text-align:left;border:0;background:transparent;border-radius:8px;padding:7px 8px;cursor:pointer;font:15px/1.3 var(--body);color:var(--ink)}
+.st-li .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.st-li .t{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.st-li .s{font-size:13px;color:var(--good);text-align:right}
+.st-li.tried .t{color:#4d4843}
+.st-li:hover{background:var(--sunk)}
+.st-li.cur{background:var(--rk-groc);font-weight:700}
+.st-li.cur .n{color:var(--ink)}
+.st-li.weak .s{color:var(--muted)}
+@media (max-width:860px){.student{flex-direction:column}.st-list{width:auto;max-height:120px;border-right:0;border-bottom:1px solid var(--line);padding-right:2px;padding-bottom:8px}}
 .st-top{display:flex;align-items:center;gap:14px}
 .st-prog{flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
 .st-prog i{display:block;height:100%;background:var(--rk-groc);width:0;transition:width .3s}
@@ -88,6 +100,7 @@ body.simple .student{display:flex}
 .st-bars button.weak{background:var(--line)}
 .st-nums{display:grid;gap:10px;width:min(980px,100%);text-align:center;font-size:13px;color:var(--muted);margin-top:-14px}
 .st-back{align-self:flex-start}
+body.simple #toast{bottom:auto;top:64px}
 .gear{position:relative;display:flex;align-items:center;gap:12px}
 .gear>span{font-size:14px;font-weight:500;opacity:.85;max-width:32ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gear>button{border:0;background:transparent;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--rk-tinta)}
@@ -398,7 +411,8 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
         <button type="button" id="bGear" aria-label="Opcions" aria-expanded="false" title="Opcions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
         <div class="pop" id="gearPop" hidden>
           <div id="gearOpts"></div>
-          <label for="oAdvance">Si la frase va bé, passa <select id="oAdvance"><option value="auto" selected>sola, al cap de 5 s</option><option value="manual">quan premo «Següent»</option></select></label>
+          <label for="oMon" title="Només amb auriculars: amb altaveus s’acobla"><span>Sentir-me als auriculars mentre canto</span><input type="checkbox" id="oMon"></label>
+      <label for="oAdvance">Si la frase va bé, passa <select id="oAdvance"><option value="auto" selected>sola, al cap de 5 s</option><option value="manual">quan premo «Següent»</option></select></label>
           <hr>
           <button class="sbtn" type="button" data-go="range">Troba el teu rang vocal</button>
           <button class="sbtn" type="button" data-go="help">Ajuda</button>
@@ -612,6 +626,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
           </div>
           <details class="adv inline adv-only"><summary>Ajustos</summary><div class="adv-body"><div class="adv-row">
           <label for="oOct"><input type="checkbox" id="oOct" checked> Ignora l'octava</label>
+          <label for="oMon2" title="Només amb auriculars: amb altaveus s’acobla"><input type="checkbox" id="oMon2"> Sentir-me mentre canto</label>
           <label for="oNudge">Alineació <input type="range" id="oNudge" min="-0.6" max="0.6" step="0.01" value="0"> <span class="mono" id="oNudgeV">0,00 s</span></label>
           </div></div></details>
         </div>
@@ -624,12 +639,15 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     </div>
   </section>
   <section class="student simple-only" id="student" aria-label="Canta">
-    <div class="st-top"><div class="st-prog"><i id="stFill"></i></div><span class="stat-l" id="stCount"></span></div>
-    <div class="st-head" id="stHead"></div>
-    <div class="st-stage" id="stStage"></div>
-    <p class="st-cap" id="stCap"></p>
-    <div class="st-final" id="stFinal" hidden></div>
-    <div class="st-actions" id="stActions"></div>
+    <nav class="st-list" id="stList" aria-label="Frases de la cançó"></nav>
+    <div class="st-main">
+      <div class="st-top"><div class="st-prog"><i id="stFill"></i></div><span class="stat-l" id="stCount"></span></div>
+      <div class="st-head" id="stHead"></div>
+      <div class="st-stage" id="stStage"></div>
+      <p class="st-cap" id="stCap"></p>
+      <div class="st-final" id="stFinal" hidden></div>
+      <div class="st-actions" id="stActions"></div>
+    </div>
   </section>
   </section>
 
@@ -1748,7 +1766,8 @@ async function ensureMic(){
     node.onaudioprocess=e=>onData({t:e.playbackTime-2048/c.sampleRate,d:e.inputBuffer.getChannelData(0).slice()});
   }
   src.connect(node);node.connect(z).connect(c.destination);
-  mic={stream,node};$('#bMic').textContent='Micròfon actiu';return mic;
+  const mon=c.createGain();mon.gain.value=S.monitor?0.9:0;src.connect(mon).connect(c.destination);
+  mic={stream,node,mon};$('#bMic').textContent='Micròfon actiu';return mic;
 }
 function micFail(err){
   setPhase(null,'<span>No tinc accés al micròfon. Dona permís al navegador (icona del cadenat a la barra d’adreces) i torna-ho a provar. Si has obert el fitxer des del disc i no et demana permís, obre’l des d’una adreça web (https).</span>');
@@ -2547,9 +2566,13 @@ async function flowStep(){
   if(!v.heard){FL.state='paused';renderStudent();return}
   if(weak){
     // hear it: the original, then you, then it waits
+    FL.sub='orig';renderStudent();
     const r=playSegment(ph.start,ph.end,S.gv,S.ga),id=runId;
-    if(!await waitUntil(r.t+(ph.end-ph.start)+0.4,id))return;
-    if(tok!==FL.token)return;await playYou(take,ph,0);
+    if(!await waitUntil(r.t+(ph.end-ph.start)+0.4,id)){FL.sub=null;return}
+    if(tok!==FL.token){FL.sub=null;return}
+    FL.sub='you';renderStudent();const ry=await playYou(take,ph,0),id2=runId;
+    await waitUntil((ry&&ry.t?ry.t:ac().currentTime)+(ph.end-ph.start)/(take.rate||1)+1.2,id2);
+    if(tok===FL.token){FL.sub=null;renderStudent()}
     return;
   }
   if(advanceMode()==='manual')return;
@@ -2559,7 +2582,7 @@ async function flowStep(){
   if(next==null){flowFinal();return}
   FL.state='running';FL.result=null;if(next!==S.cur)select(next);flowStep();
 }
-function flowPause(){FL.token++;cancel();FL.state='paused';FL.cd=0;S.hideTake=false;renderStudent()}
+function flowPause(){FL.token++;cancel();FL.state='paused';FL.cd=0;FL.sub=null;S.hideTake=false;renderStudent()}
 function flowRetry(){flowStep()}
 function flowNext(){FL.token++;cancel();const nx=FL.next!=null?FL.next:nextInQueue();FL.next=null;if(nx==null){flowFinal();return}select(nx);flowStep()}
 function flowFinal(){FL.token++;cancel();FL.state='final';FL.queue=null;FL.cd=0;S.hideTake=false;
@@ -2572,8 +2595,15 @@ function flowStart(){FL.queue=null;FL.repeated=false;flowStep()}
 async function flowListenYou(){const ph=curPh(),t=S.take;if(!ph||!t)return;FL.token++;cancel();FL.state='paused';renderStudent();await playYou(t,ph)}
 function flowReview(){const weak=S.phrases.map((p,i)=>[p,i]).filter(([p])=>{const b=bestScore(p);return b==null||b<50}).map(([,i])=>i);if(!weak.length){toast('Cap frase fluixa: totes per sobre de la meitat.');return}FL.queue=weak.slice(1);weak.forEach(i=>{S.phrases[i].lvl=1});select(weak[0]);flowStep()}
 async function flowFull(){FL.token++;cancel();FL.state='full';renderStudent();S.cursor=Math.max(0,S.phrases[0].start-1);await fullStart()}
+function renderStudentList(){
+  const n=S.phrases.length,i=S.cur,box=$('#stList');box.hidden=n<2;if(n<2)return;
+  box.innerHTML=S.phrases.map((p,k)=>{const b=bestScore(p),dn=phraseDone(p);return'<button type="button" class="st-li'+(k===i?' cur':'')+(p.takes.length?' tried':'')+(b!=null&&b<50?' weak':'')+'" data-i="'+k+'"><span class="n">'+(k+1)+'</span><span class="t">'+(p.lyr?esc(p.lyr):'Frase '+(k+1))+'</span><span class="s">'+(dn?'✓':p.takes.length?'·':'')+'</span></button>'}).join('');
+  const cur=box.querySelector('.cur');if(cur&&cur.scrollIntoView)try{cur.scrollIntoView({block:'nearest'})}catch(e){}
+}
+$('#stList').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;const k=+b.dataset.i;if(FL.state==='running'||FL.state==='full')return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(k);renderStudent()});
 function renderStudent(){
   const on=studentOn();mountStudent(on);$('#student').hidden=!on;if(!on)return;
+  renderStudentList();
   const ph=curPh(),n=S.phrases.length,i=S.cur,done=S.phrases.filter(p=>p.takes.length).length;
   $('#tbSong').textContent=S.name||'';
   $('#stFill').style.width=(n?done/n*100:0)+'%';$('#stCount').textContent=n?'Frase '+(i+1)+' de '+n:'';
@@ -2583,11 +2613,15 @@ function renderStudent(){
   if(!ph){h.innerHTML='';$('#stActions').innerHTML='';return}
   const lv=ph.lvl==null?1:ph.lvl,ladder='<span class="ladder" title="Suport: primer amb la veu, després fluixa, després tu sola">'+LVL.map((L,k)=>'<i class="'+(k<lv?'past':k===lv?'cur':'')+'"></i>').join('')+'<span>'+LVL[lv].name+'</span></span>';
   if(FL.state==='running'){
-    const ph2=S.phase==='listen'?'<span class="pill listen"><i></i>Escolta</span>':S.phase==='rec'?'<span class="pill rec"><i></i>'+(lv===0?'Canta amb la veu':lv===1?'Ara canta tu':'Tu sola')+'</span>':'<span class="pill wait"><i></i>Un moment…</span>';
+    const ph2=S.phase==='listen'?'<span class="pill listen"><i></i>Escolta la frase</span>'
+      :S.phase==='rec'?(rec.active?'<span class="pill rec"><i></i>'+(lv===0?'Canta amb la veu!':lv===1?'Canta!':'Canta tu sola!')+'</span>':'<span class="pill wait"><i></i>Prepara’t: entra amb la música…</span>')
+      :'<span class="pill wait"><i></i>Un moment…</span>';
     h.innerHTML=ph2+lyr+ladder;
   }else if(FL.state==='result'&&FL.result){
     const v=FL.result;
+    const sub=FL.sub==='orig'?'<span class="pill listen"><i></i>Escolta l’original</span>':FL.sub==='you'?'<span class="pill wait"><i></i>Ara tu, tal com ho has cantat</span>':'';
     if(!v.heard)h.innerHTML='<span class="st-res">No t’he sentit</span><span class="st-tip">'+v.tip+'</span>';
+    else if(sub)h.innerHTML=sub+(FL.shown?'<span class="st-tip">'+v.ok+' de '+v.nn+' notes · '+v.tip+'</span>':'<span class="st-tip">Fixa’t en què canvia.</span>');
     else if(FL.shown)h.innerHTML='<span class="st-res"><em style="color:var(--'+(v.frac>=.75?'good':v.frac>=.5?'mid':'ink')+')">'+v.ok+'</em> de '+v.nn+' notes</span><span class="st-tip">'+v.tip+'</span>';
     else h.innerHTML='<span class="st-res">'+(FL.weak?'Escolta: l’original, i després tu.':'Bé. Seguim.')+'</span><span class="st-tip">'+(FL.weak?'Fixa’t en què canvia i torna-hi.':(FL.next===S.cur?'Ara '+LVL[ph.lvl==null?1:ph.lvl].name+'.':''))+'</span>';
   }else if(FL.state==='full'){const nx=S.phrases[i+1];h.innerHTML='<span class="pill rec"><i></i>Canta</span>'+(ph.lyr?'<span class="st-lyr big">«'+esc(ph.lyr)+'»</span>':'<span class="st-lyr big">Frase '+(i+1)+'</span>')+(nx&&nx.lyr?'<span class="st-tip">després: «'+esc(nx.lyr)+'»</span>':'')}
@@ -2618,7 +2652,7 @@ function renderStudentActions(){
   else if(st==='full')a.innerHTML='<button class="midbtn" type="button" data-a="stopfull">■ Atura</button>';
   else if(st==='result'){
     const ph=curPh(),nx=FL.next,lbl=nx==null?'Resum':nx===S.cur?'Ara '+LVL[ph&&ph.lvl!=null?ph.lvl:1].name:'Frase '+(nx+1);
-    if(FL.weak)a.innerHTML='<button class="bigbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="listen">Escolta-la</button><button class="midbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent →')+'</button>';
+    if(FL.weak)a.innerHTML=(FL.sub?'<span class="st-wait"><span>Escolta… després podràs tornar-hi</span></span><button class="midbtn" type="button" data-a="pause">Pausa</button>':'<button class="bigbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="listen">Escolta-la</button><button class="midbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent →')+'</button>');
     else if(manual)a.innerHTML='<button class="bigbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent →')+'</button><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>';
     else a.innerHTML='<span class="st-wait" title="'+lbl+'"><i id="stWait"></i><span>'+lbl+'…</span></span><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="pause">Pausa</button>';
   }else if(st==='paused'){
@@ -2638,6 +2672,10 @@ $('#gearTeacher').addEventListener('click',()=>{$('#gearPop').hidden=true;setMod
 $('#bExport2').addEventListener('click',()=>{$('#gearPop').hidden=true;$('#bExport').click()});
 $('#bPrepMine').addEventListener('click',()=>{setMode(false);$('#fMix').click()});
 $('#oAdvance').addEventListener('change',()=>{try{localStorage.setItem('mirall-advance',$('#oAdvance').value)}catch(e){}});
+function setMonitor(on){S.monitor=on;$('#oMon').checked=on;const o2=$('#oMon2');if(o2)o2.checked=on;if(mic&&mic.mon)mic.mon.gain.setTargetAtTime(on?0.9:0,ac().currentTime,0.02);try{localStorage.setItem('mirall-monitor',on?'1':'0')}catch(e){}if(on&&!mic)ensureMic().catch(()=>{})}
+$('#oMon').addEventListener('change',()=>setMonitor($('#oMon').checked));
+$('#oMon2').addEventListener('change',()=>setMonitor($('#oMon2').checked));
+try{if(localStorage.getItem('mirall-monitor')==='1'){S.monitor=true;$('#oMon').checked=true;$('#oMon2').checked=true}}catch(e){}
 try{$('#oAdvance').value=localStorage.getItem('mirall-advance')||'auto'}catch(e){}
 function select(i){if(i<0||i>=S.phrases.length)return;if(i!==S.cur){S.cur=i;S.take=null;S.cmpCursor=null}const p=S.phrases[i];if(p.start<V.v0||p.end>V.v1){const span=V.v1-V.v0;if(p.end-p.start<span*0.9)setView(p.start-(span-(p.end-p.start))/2,p.start-(span-(p.end-p.start))/2+span);else viewPhrase()}renderAll()}
 
