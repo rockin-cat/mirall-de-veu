@@ -84,6 +84,14 @@ body.simple .student{display:flex}
 .st-stage .cv-wrap{flex:1;height:auto;min-height:180px;border-radius:16px}
 .st-cap{text-align:center;color:var(--muted);font-size:16px;margin:0;min-height:22px}
 .st-actions{display:flex;align-items:center;justify-content:center;gap:22px;min-height:78px;flex-wrap:wrap}
+.pp{position:relative;width:72px;height:72px;border-radius:50%;border:0;background:var(--rk-groc);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 0 #c99300;flex:none}
+.pp:active{transform:translateY(2px);box-shadow:0 2px 0 #c99300}
+.pp.on{background:var(--ink);color:var(--rk-groc);box-shadow:0 4px 0 #000}
+.pp svg{width:30px;height:30px}
+.kbd{display:inline-block;font:11px/1 var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:3px 6px;background:var(--panel);vertical-align:middle}
+.ppwrap{display:inline-flex;flex-direction:column;align-items:center;gap:6px}
+.ppcap{font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.st-keys{color:var(--muted);font-size:13px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
 .bigbtn{border:0;background:var(--rk-groc);color:var(--ink);font:700 24px/1 var(--body);padding:22px 52px;border-radius:16px;cursor:pointer;box-shadow:0 4px 0 #c99300;display:inline-flex;align-items:center;gap:12px}
 .bigbtn:active{transform:translateY(2px);box-shadow:0 2px 0 #c99300}
 .bigbtn.alt{background:var(--panel);border:2px solid var(--ink);box-shadow:0 4px 0 var(--ink)}
@@ -412,6 +420,7 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
         <div class="pop" id="gearPop" hidden>
           <div id="gearOpts"></div>
           <label for="oMon" title="Només amb auriculars: amb altaveus s’acobla"><span>Sentir-me als auriculars mentre canto</span><input type="checkbox" id="oMon"></label>
+      <span class="stat-l" id="monInfo" style="margin-top:-6px"></span>
       <label for="oAdvance">Si la frase va bé, passa <select id="oAdvance"><option value="auto" selected>sola, al cap de 5 s</option><option value="manual">quan premo «Següent»</option></select></label>
           <hr>
           <button class="sbtn" type="button" data-go="range">Troba el teu rang vocal</button>
@@ -1766,8 +1775,8 @@ async function ensureMic(){
     node.onaudioprocess=e=>onData({t:e.playbackTime-2048/c.sampleRate,d:e.inputBuffer.getChannelData(0).slice()});
   }
   src.connect(node);node.connect(z).connect(c.destination);
-  const mon=c.createGain();mon.gain.value=S.monitor?0.9:0;src.connect(mon).connect(c.destination);
-  mic={stream,node,mon};$('#bMic').textContent='Micròfon actiu';return mic;
+  mic={stream,node,mon:null};if(S.monitor)monitorOn(true);
+  $('#bMic').textContent='Micròfon actiu';return mic;
 }
 function micFail(err){
   setPhase(null,'<span>No tinc accés al micròfon. Dona permís al navegador (icona del cadenat a la barra d’adreces) i torna-ho a provar. Si has obert el fitxer des del disc i no et demana permís, obre’l des d’una adreça web (https).</span>');
@@ -2644,23 +2653,36 @@ function renderStudent(){
   $('#stCap').textContent=FL.state==='idle'?((lastH&&ago>=1?'L’última vegada ('+(ago===1?'ahir':'fa '+ago+' dies')+'): '+lastH.good+' de '+lastH.n+' frases bé. ':'')+'Canta-la sencera: sona la cançó amb la veu fluixeta i la cantes tu, com un karaoke; al final veuràs quines frases et convé repassar. Frase per frase: sents una frase, la cantes amb la veu i després tu sola, i si va bé passa a la següent.'):FL.state==='paused'&&!S.take&&$('#status').textContent?$('#status').textContent:'';
   renderStudentActions();
 }
+const PP=(on,label)=>'<span class="ppwrap"><button class="pp'+(on?' on':'')+'" type="button" data-a="toggle" aria-label="'+label+'" title="'+label+' (Espai)">'+(on?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg>':'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>')+'</button><span class="ppcap">'+label+' <span class="kbd">Espai</span></span></span>';
+// what the space bar does right now
+function flowToggle(){
+  const st=FL.state;
+  if(st==='idle')flowStart();
+  else if(st==='running')flowPause();
+  else if(st==='full')cancel();
+  else if(st==='paused')flowRetry();
+  else if(st==='result'){if(FL.sub){FL.token++;cancel();FL.sub=null;renderStudent();return}if(FL.weak)flowRetry();else flowNext()}
+  else if(st==='final')flowReview();
+}
+function flowPrev(){if(FL.state==='running'||FL.state==='full')return;if(S.cur<=0)return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(S.cur-1);renderStudent()}
+function flowNextPhrase(){if(FL.state==='running'||FL.state==='full')return;if(S.cur+1>=S.phrases.length)return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(S.cur+1);renderStudent()}
 function renderStudentActions(){
   const a=$('#stActions'),st=FL.state;if(st==='final')return;
   const manual=advanceMode()==='manual';
-  if(st==='idle')a.innerHTML='<button class="bigbtn" type="button" data-a="full"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4zm-7 10a7 7 0 0 0 6 6.9V22h2v-2.1a7 7 0 0 0 6-6.9h-2a5 5 0 0 1-10 0z"></path></svg>Canta-la sencera</button><button class="bigbtn alt" type="button" data-a="start"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"></path></svg>Practica frase per frase</button><button class="linkbtn" type="button" data-a="listen">Només vull sentir aquesta frase</button>';
-  else if(st==='running')a.innerHTML='<button class="midbtn" type="button" data-a="pause">❚❚ Pausa</button>';
-  else if(st==='full')a.innerHTML='<button class="midbtn" type="button" data-a="stopfull">■ Atura</button>';
+  if(st==='idle')a.innerHTML=PP(false,'Frase per frase')+'<button class="bigbtn" type="button" data-a="full"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4zm-7 10a7 7 0 0 0 6 6.9V22h2v-2.1a7 7 0 0 0 6-6.9h-2a5 5 0 0 1-10 0z"></path></svg>Canta-la sencera</button><button class="linkbtn" type="button" data-a="listen">Només vull sentir aquesta frase</button><span class="st-keys"><span><span class="kbd">←</span> <span class="kbd">→</span> canviar de frase</span></span>';
+  else if(st==='running')a.innerHTML=PP(true,'Pausa')+'<span class="st-keys">Pausa</span>';
+  else if(st==='full')a.innerHTML=PP(true,'Atura')+'<span class="st-keys">Atura</span>';
   else if(st==='result'){
     const ph=curPh(),nx=FL.next,lbl=nx==null?'Resum':nx===S.cur?'Ara '+LVL[ph&&ph.lvl!=null?ph.lvl:1].name:'Frase '+(nx+1);
-    if(FL.weak)a.innerHTML=(FL.sub?'<span class="st-wait"><span>Escolta… després podràs tornar-hi</span></span><button class="midbtn" type="button" data-a="pause">Pausa</button>':'<button class="bigbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="listen">Escolta-la</button><button class="midbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent →')+'</button>');
-    else if(manual)a.innerHTML='<button class="bigbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent →')+'</button><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>';
-    else a.innerHTML='<span class="st-wait" title="'+lbl+'"><i id="stWait"></i><span>'+lbl+'…</span></span><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="pause">Pausa</button>';
+    if(FL.weak)a.innerHTML=(FL.sub?PP(true,'Salta l’escolta')+'<span class="st-wait"><span>Escolta… després podràs tornar-hi</span></span>':PP(false,'Torna-hi')+'<button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="listen">Escolta-la</button><button class="midbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent')+' <span class="kbd">→</span></button>');
+    else if(manual)a.innerHTML=PP(false,nx==null?'Resum':'Següent')+'<button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>';
+    else a.innerHTML=PP(false,nx==null?'Resum ja':'Següent ja')+'<span class="st-wait" title="'+lbl+'"><i id="stWait"></i><span>'+lbl+'…</span></span><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>';
   }else if(st==='paused'){
-    a.innerHTML='<button class="bigbtn" type="button" data-a="resume">▶ Continua</button>'+(S.take?'<button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>':'')+'<button class="midbtn" type="button" data-a="listen">Escolta-la</button>'+(S.cur+1<S.phrases.length?'<button class="midbtn" type="button" data-a="next">Següent →</button>':'<button class="midbtn" type="button" data-a="final">Resum</button>');
+    a.innerHTML=PP(false,'Continua')+(S.take?'<button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>':'')+'<button class="midbtn" type="button" data-a="listen">Escolta-la</button>'+(S.cur+1<S.phrases.length?'<button class="midbtn" type="button" data-a="next">Següent <span class="kbd">→</span></button>':'<button class="midbtn" type="button" data-a="final">Resum</button>');
   }
 }
 $('#stActions').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;
-  if(a==='start')flowStart();else if(a==='listen'){FL.token++;listen()}else if(a==='pause')flowPause();else if(a==='resume')flowRetry();else if(a==='retry')flowRetry();
+  if(a==='toggle')flowToggle();else if(a==='start')flowStart();else if(a==='listen'){FL.token++;listen()}else if(a==='pause')flowPause();else if(a==='resume')flowRetry();else if(a==='retry')flowRetry();
   else if(a==='next')flowNext();else if(a==='you')flowListenYou();else if(a==='final')flowFinal();else if(a==='review')flowReview();else if(a==='restart'){FL.queue=null;select(0);flowStep()}
   else if(a==='full')flowFull();else if(a==='stopfull'){cancel()}else if(a==='home'){FL.state='idle';select(0);renderStudent()}});
 $('#stFinal').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;FL.state='idle';select(+b.dataset.i);renderStudent()});
@@ -2672,7 +2694,19 @@ $('#gearTeacher').addEventListener('click',()=>{$('#gearPop').hidden=true;setMod
 $('#bExport2').addEventListener('click',()=>{$('#gearPop').hidden=true;$('#bExport').click()});
 $('#bPrepMine').addEventListener('click',()=>{setMode(false);$('#fMix').click()});
 $('#oAdvance').addEventListener('change',()=>{try{localStorage.setItem('mirall-advance',$('#oAdvance').value)}catch(e){}});
-function setMonitor(on){S.monitor=on;$('#oMon').checked=on;const o2=$('#oMon2');if(o2)o2.checked=on;if(mic&&mic.mon)mic.mon.gain.setTargetAtTime(on?0.9:0,ac().currentTime,0.02);try{localStorage.setItem('mirall-monitor',on?'1':'0')}catch(e){}if(on&&!mic)ensureMic().catch(()=>{})}
+// the monitor runs in a context of its own asking for the smallest buffer the machine allows; the main context keeps its bigger buffer for playback
+let monCtx=null;
+function monitorOn(on){
+  if(!mic)return;
+  if(on){
+    if(!monCtx){const C=window.AudioContext||window.webkitAudioContext;try{monCtx=new C({latencyHint:0})}catch(e){monCtx=new C({latencyHint:'interactive'})}}
+    if(monCtx.state==='suspended')monCtx.resume();
+    if(!mic.mon){const src=monCtx.createMediaStreamSource(mic.stream),g=monCtx.createGain();g.gain.value=0.8;src.connect(g).connect(monCtx.destination);mic.mon=g;mic.monSrc=src}
+    mic.mon.gain.setTargetAtTime(0.8,monCtx.currentTime,0.02);
+    const ms=Math.round(((monCtx.baseLatency||0)+(monCtx.outputLatency||0))*1000+10);$('#monInfo').textContent=ms>35?'Retard d’uns '+ms+' ms en aquest ordinador: si et molesta, desactiva-ho.':'Retard d’uns '+ms+' ms.';
+  }else if(mic.mon){mic.mon.gain.setTargetAtTime(0,monCtx.currentTime,0.02);$('#monInfo').textContent=''}
+}
+function setMonitor(on){S.monitor=on;$('#oMon').checked=on;const o2=$('#oMon2');if(o2)o2.checked=on;try{localStorage.setItem('mirall-monitor',on?'1':'0')}catch(e){}if(!mic){if(on)ensureMic().catch(()=>{});return}monitorOn(on)}
 $('#oMon').addEventListener('change',()=>setMonitor($('#oMon').checked));
 $('#oMon2').addEventListener('change',()=>setMonitor($('#oMon2').checked));
 try{if(localStorage.getItem('mirall-monitor')==='1'){S.monitor=true;$('#oMon').checked=true;$('#oMon2').checked=true}}catch(e){}
@@ -2924,7 +2958,12 @@ document.addEventListener('keydown',e=>{
   if(e.target.closest('#rangePanel')&&k!=='Escape')return;
   if(k==='+'||k==='='){e.preventDefault();$('#zIn').click();return}
   if(k==='-'){e.preventDefault();$('#zOut').click();return}
-  const map={' ':listen,'r':recordOnly,'R':recordOnly,'Enter':cycle,'Escape':()=>{if(fullRec)fullStop();else if(studentOn()&&FL.state==='running')flowPause();else cancel()},'ArrowLeft':()=>{cancel();select(S.cur-1)},'ArrowRight':()=>{cancel();select(S.cur+1)}};
+  if(studentOn()){
+    const smap={' ':flowToggle,'Enter':flowToggle,'Escape':()=>{if(FL.state==='running'||FL.state==='full')flowToggle()},'ArrowLeft':flowPrev,'ArrowRight':flowNextPhrase};
+    if(smap[k]){e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();smap[k]()}
+    return;
+  }
+  const map={' ':listen,'r':recordOnly,'R':recordOnly,'Enter':cycle,'Escape':()=>{if(fullRec)fullStop();else cancel()},'ArrowLeft':()=>{cancel();select(S.cur-1)},'ArrowRight':()=>{cancel();select(S.cur+1)}};
   if(map[k]){e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();map[k]()}
 });
 
