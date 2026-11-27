@@ -80,8 +80,16 @@ body.simple .student{display:flex}
 .st-res{font-family:var(--display);font-size:44px;font-weight:700;line-height:1}
 .st-res em{font-style:normal}
 .st-tip{font-size:21px;color:#4d4843}
-.st-stage{flex:1;min-height:180px;display:flex;flex-direction:column}
+.st-stage{flex:1;min-height:180px;display:flex;flex-direction:row;gap:14px;align-items:stretch}
 .st-stage .cv-wrap{flex:1;height:auto;min-height:180px;border-radius:16px}
+.st-mix{order:2;width:150px;flex:none;display:flex;flex-direction:column;gap:14px;justify-content:center;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.st-mix label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink)}
+.st-mix label span{font-weight:700}
+.st-mix input[type=range]{width:100%;accent-color:var(--rk-groc)}
+.st-mix b{font:12px var(--mono);color:var(--muted);font-weight:400}
+.st-mix small{font-size:11px;color:var(--muted);line-height:1.3}
+body.simple[data-flow="final"] .st-mix{display:none}
+@media (max-width:860px){.st-stage{flex-direction:column}.st-mix{width:auto;flex-direction:row;align-items:center}.st-mix label{flex:1}.st-mix small{display:none}}
 .st-cap{text-align:center;color:var(--muted);font-size:16px;margin:0;min-height:22px}
 .st-actions{display:flex;align-items:center;justify-content:center;gap:22px;min-height:78px;flex-wrap:wrap}
 .pp{position:relative;width:72px;height:72px;border-radius:50%;border:0;background:var(--rk-groc);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 0 #c99300;flex:none}
@@ -652,7 +660,13 @@ kbd{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border
     <div class="st-main">
       <div class="st-top"><div class="st-prog"><i id="stFill"></i></div><span class="stat-l" id="stCount"></span></div>
       <div class="st-head" id="stHead"></div>
-      <div class="st-stage" id="stStage"></div>
+      <div class="st-stage" id="stStage">
+        <div class="st-mix" id="stMix">
+          <label><span>Veu original</span><input type="range" id="mxVoice" min="0" max="100" step="5" value="30" aria-label="Veu original mentre cantes"><b id="mxVoiceV">30 %</b></label>
+          <label title="Només amb auriculars de cable; amb Bluetooth arriba tard"><span>La meva veu</span><input type="range" id="mxMon" min="0" max="100" step="5" value="0" aria-label="La meva veu als auriculars"><b id="mxMonV">no</b></label>
+          <small id="mxNote">S’aplica a la propera vegada que cantis; mentre cantes, al moment.</small>
+        </div>
+      </div>
       <p class="st-cap" id="stCap"></p>
       <div class="st-final" id="stFinal" hidden></div>
       <div class="st-actions" id="stActions"></div>
@@ -1730,7 +1744,7 @@ function segmentStretched(s,e,gv,ga,vFrom,rate){
   stretchCache.set(key,out);return out;
 }
 function playBase(s,e,when,rate){rate=rate||1;const r=playChannels(rate===1?segmentMix(s,e,0,1):segmentStretched(s,e,0,1,null,rate),S.sr,when,null,{gain:S.gbase,role:'base'});S.play={t0:r.t,from:s,to:e,rate};return r}
-function playSegment(s,e,gv,ga,when,pan,vFrom,rate){rate=rate||1;const r=playChannels(rate===1?segmentMix(s,e,gv,ga,vFrom):segmentStretched(s,e,gv,ga,vFrom,rate),S.sr,when,pan);S.play={t0:r.t,from:s,to:e,rate};return r}
+function playSegment(s,e,gv,ga,when,pan,vFrom,rate,opts){rate=rate||1;const r=playChannels(rate===1?segmentMix(s,e,gv,ga,vFrom):segmentStretched(s,e,gv,ga,vFrom,rate),S.sr,when,pan,opts);S.play={t0:r.t,from:s,to:e,rate};return r}
 function scheduleEntry(en,start,end){
   // clicks on each beat of the lead-in, accented on 1; the count is shown big in the status line
   const rate=rateOpt();
@@ -1816,12 +1830,15 @@ async function doRecord(ph,id){
   const c=ac(),mode=$('#oBack').value,withAcc=mode!=='none',rate=rateOpt(),dur=(ph.end-ph.start)/rate;
   S.armed=true;S.take=null;S.cmpCursor=null;renderDesk();
   const en=entryFor(ph),lead=(ph.start-en.from)/rate;
-  if(withAcc&&rate<1){setPhase('rec','Preparant la base a '+Math.round(rate*100)+' %…');await sleep(10);segmentStretched(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?(S.guideGain!=null?S.guideGain:0.3):0,1,ph.start,rate)}
+  if(withAcc&&rate<1){setPhase('rec','Preparant la base a '+Math.round(rate*100)+' %…');await sleep(10);const eT=Math.min(S.len/S.sr,ph.end+1.5);segmentStretched(en.from,eT,0,1,ph.start,rate);segmentStretched(en.from,eT,1,0,ph.start,rate)}
   let start=c.currentTime+0.15;
   if(!en.clicks.length&&lead<0.5){start+=0.9;setPhase('rec','Prepara’t…')}
   const t0=start+lead;
-  const gg=S.guideGain!=null?S.guideGain:0.3;
-  if(withAcc)playSegment(en.from,Math.min(S.len/S.sr,ph.end+1.5),mode==='guide'?gg:0,1,start,null,ph.start,rate);
+  const gg=S.guideGain!=null?S.guideGain:0.3,segEnd=Math.min(S.len/S.sr,ph.end+1.5);
+  if(withAcc){
+    playSegment(en.from,segEnd,0,1,start,null,ph.start,rate,{gain:1,role:'base'});                       // the base
+    playSegment(en.from,segEnd,1,0,start,null,ph.start,rate,{gain:mode==='guide'?gg:0,role:'voice'});     // the original voice, with a live fader
+  }
   scheduleEntry(en,start,t0);
   setPhase('rec',lead>0.3?'Entra la base… compta i entra a temps':'Prepara’t…');
   const len=withAcc?dur+1.3:dur*1.3+1.6;   // keep recording a while after the phrase ends, so held last notes are not cut
@@ -2556,7 +2573,9 @@ async function flowStep(){
   if(!studentOn())return;
   FL.token++;const tok=FL.token;cancel();FL.state='running';FL.result=null;FL.next=null;S.hideTake=false;
   const ph0=curPh();if(!ph0){FL.state='idle';renderStudent();return}
-  const lvl=flowLevelFor(ph0),L=LVL[lvl];S.flowLvl=lvl;S.guideGain=L.g;$('#oBack').value=L.mode;$('#oTimes').value='1';
+  const lvl=flowLevelFor(ph0),L=LVL[lvl];S.flowLvl=lvl;
+  const g=S.mixTouched&&S.voiceMix!=null?S.voiceMix:L.g;S.mixTouched=false;setVoiceMix(g);
+  S.guideGain=g;$('#oBack').value=g>0?'guide':'base';$('#oTimes').value='1';
   renderStudent();
   await cycle();
   S.guideGain=null;S.flowLvl=null;
@@ -2609,7 +2628,7 @@ function renderStudentList(){
   box.innerHTML=S.phrases.map((p,k)=>{const b=bestScore(p),dn=phraseDone(p);return'<button type="button" class="st-li'+(k===i?' cur':'')+(p.takes.length?' tried':'')+(b!=null&&b<50?' weak':'')+'" data-i="'+k+'"><span class="n">'+(k+1)+'</span><span class="t">'+(p.lyr?esc(p.lyr):'Frase '+(k+1))+'</span><span class="s">'+(dn?'✓':p.takes.length?'·':'')+'</span></button>'}).join('');
   const cur=box.querySelector('.cur');if(cur&&cur.scrollIntoView)try{cur.scrollIntoView({block:'nearest'})}catch(e){}
 }
-$('#stList').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;const k=+b.dataset.i;if(FL.state==='running'||FL.state==='full')return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(k);renderStudent()});
+$('#stList').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;const k=+b.dataset.i;if(FL.state==='running'||FL.state==='full')return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(k);const p=curPh();if(p&&p.takes.length&&!S.take)S.take=p.takes[p.takes.length-1];renderStudent();drawCompare()});
 function renderStudent(){
   const on=studentOn();mountStudent(on);$('#student').hidden=!on;if(!on)return;
   renderStudentList();
@@ -2620,6 +2639,8 @@ function renderStudent(){
   const isFinal=FL.state==='final';
   $('#stStage').hidden=isFinal;$('#stCap').hidden=isFinal;$('#stFinal').hidden=!isFinal;
   if(!ph){h.innerHTML='';$('#stActions').innerHTML='';return}
+  document.body.dataset.flow=FL.state;
+  if(FL.state!=='running'&&!S.mixTouched){const want=LVL[ph.lvl==null?1:ph.lvl].g;if(S.voiceMix!==want)setVoiceMix(want)}
   const lv=ph.lvl==null?1:ph.lvl,ladder='<span class="ladder" title="Suport: primer amb la veu, després fluixa, després tu sola">'+LVL.map((L,k)=>'<i class="'+(k<lv?'past':k===lv?'cur':'')+'"></i>').join('')+'<span>'+LVL[lv].name+'</span></span>';
   if(FL.state==='running'){
     const ph2=S.phase==='listen'?'<span class="pill listen"><i></i>Escolta la frase</span>'
@@ -2654,6 +2675,19 @@ function renderStudent(){
   renderStudentActions();
 }
 const PP=(on,label)=>'<span class="ppwrap"><button class="pp'+(on?' on':'')+'" type="button" data-a="toggle" aria-label="'+label+'" title="'+label+' (Espai)">'+(on?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg>':'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>')+'</button><span class="ppcap">'+label+' <span class="kbd">Espai</span></span></span>';
+// the voice fader: what the ladder sets, or what the student moved it to (valid for the next sing, live while singing)
+function setVoiceMix(v,from){
+  v=Math.max(0,Math.min(1,v));S.voiceMix=v;
+  $('#mxVoice').value=Math.round(v*100);$('#mxVoiceV').textContent=v<=0?'cap':Math.round(v*100)+' %';
+  playing.forEach(x=>{if(x._role==='voice'&&x._gain)x._gain.gain.setTargetAtTime(v,ac().currentTime,0.03)});
+  if(from==='user'){S.mixTouched=true;const ph=curPh();if(ph)ph.lvl=v>=0.6?0:v>0?1:2;renderStudent()}
+}
+function setMonMix(v){
+  v=Math.max(0,Math.min(1,v));S.monGain=v;$('#mxMon').value=Math.round(v*100);$('#mxMonV').textContent=v<=0?'no':Math.round(v*100)+' %';
+  if(v>0&&!S.monitor)setMonitor(true);else if(v<=0&&S.monitor)setMonitor(false);else if(mic&&mic.mon&&monCtx)mic.mon.gain.setTargetAtTime(v,monCtx.currentTime,0.02);
+}
+$('#mxVoice').addEventListener('input',()=>setVoiceMix(+$('#mxVoice').value/100,'user'));
+$('#mxMon').addEventListener('input',()=>setMonMix(+$('#mxMon').value/100));
 // what the space bar does right now
 function flowToggle(){
   const st=FL.state;
@@ -2664,27 +2698,28 @@ function flowToggle(){
   else if(st==='result'){if(FL.sub){FL.token++;cancel();FL.sub=null;renderStudent();return}if(FL.weak)flowRetry();else flowNext()}
   else if(st==='final')flowReview();
 }
-function flowPrev(){if(FL.state==='running'||FL.state==='full')return;if(S.cur<=0)return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(S.cur-1);renderStudent()}
-function flowNextPhrase(){if(FL.state==='running'||FL.state==='full')return;if(S.cur+1>=S.phrases.length)return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(S.cur+1);renderStudent()}
+function showLastTake(){const p=curPh();if(p&&p.takes.length&&!S.take)S.take=p.takes[p.takes.length-1]}
+function flowPrev(){if(FL.state==='running'||FL.state==='full')return;if(S.cur<=0)return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(S.cur-1);showLastTake();renderStudent();drawCompare()}
+function flowNextPhrase(){if(FL.state==='running'||FL.state==='full')return;if(S.cur+1>=S.phrases.length)return;FL.token++;cancel();FL.state='idle';FL.sub=null;S.hideTake=false;select(S.cur+1);showLastTake();renderStudent();drawCompare()}
 function renderStudentActions(){
   const a=$('#stActions'),st=FL.state;if(st==='final')return;
   const manual=advanceMode()==='manual';
-  if(st==='idle')a.innerHTML=PP(false,'Frase per frase')+'<button class="bigbtn" type="button" data-a="full"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4zm-7 10a7 7 0 0 0 6 6.9V22h2v-2.1a7 7 0 0 0 6-6.9h-2a5 5 0 0 1-10 0z"></path></svg>Canta-la sencera</button><button class="linkbtn" type="button" data-a="listen">Només vull sentir aquesta frase</button><span class="st-keys"><span><span class="kbd">←</span> <span class="kbd">→</span> canviar de frase</span></span>';
-  else if(st==='running')a.innerHTML=PP(true,'Pausa')+'<span class="st-keys">Pausa</span>';
-  else if(st==='full')a.innerHTML=PP(true,'Atura')+'<span class="st-keys">Atura</span>';
+  if(st==='idle')a.innerHTML=PP(false,'Frase per frase')+'<button class="bigbtn" type="button" data-a="full"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4zm-7 10a7 7 0 0 0 6 6.9V22h2v-2.1a7 7 0 0 0 6-6.9h-2a5 5 0 0 1-10 0z"></path></svg>Canta-la sencera</button><button class="midbtn" type="button" data-a="listen">▶ L’original</button>'+(S.take?'<button class="midbtn" type="button" data-a="you">▶ Tu</button>':'')+'<span class="st-keys"><span><span class="kbd">←</span> <span class="kbd">→</span> canviar de frase</span></span>';
+  else if(st==='running')a.innerHTML=PP(true,'Pausa');
+  else if(st==='full')a.innerHTML=PP(true,'Atura');
   else if(st==='result'){
     const ph=curPh(),nx=FL.next,lbl=nx==null?'Resum':nx===S.cur?'Ara '+LVL[ph&&ph.lvl!=null?ph.lvl:1].name:'Frase '+(nx+1);
-    if(FL.weak)a.innerHTML=(FL.sub?PP(true,'Salta l’escolta')+'<span class="st-wait"><span>Escolta… després podràs tornar-hi</span></span>':PP(false,'Torna-hi')+'<button class="midbtn" type="button" data-a="you">▶ Escolta’t</button><button class="midbtn" type="button" data-a="listen">Escolta-la</button><button class="midbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent')+' <span class="kbd">→</span></button>');
-    else if(manual)a.innerHTML=PP(false,nx==null?'Resum':'Següent')+'<button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>';
-    else a.innerHTML=PP(false,nx==null?'Resum ja':'Següent ja')+'<span class="st-wait" title="'+lbl+'"><i id="stWait"></i><span>'+lbl+'…</span></span><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>';
+    if(FL.weak)a.innerHTML=(FL.sub?PP(true,'Salta l’escolta')+'<span class="st-wait"><span>Escolta… després podràs tornar-hi</span></span>':PP(false,'Torna-hi')+'<button class="midbtn" type="button" data-a="listen">▶ L’original</button><button class="midbtn" type="button" data-a="you">▶ Tu</button><button class="midbtn" type="button" data-a="next">'+(nx==null?'Resum':'Següent')+' <span class="kbd">→</span></button>');
+    else if(manual)a.innerHTML=PP(false,nx==null?'Resum':'Següent')+'<button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Tu</button>';
+    else a.innerHTML=PP(false,nx==null?'Resum ja':'Següent ja')+'<span class="st-wait" title="'+lbl+'"><i id="stWait"></i><span>'+lbl+'…</span></span><button class="midbtn" type="button" data-a="retry">↻ Torna-hi</button><button class="midbtn" type="button" data-a="you">▶ Tu</button>';
   }else if(st==='paused'){
-    a.innerHTML=PP(false,'Continua')+(S.take?'<button class="midbtn" type="button" data-a="you">▶ Escolta’t</button>':'')+'<button class="midbtn" type="button" data-a="listen">Escolta-la</button>'+(S.cur+1<S.phrases.length?'<button class="midbtn" type="button" data-a="next">Següent <span class="kbd">→</span></button>':'<button class="midbtn" type="button" data-a="final">Resum</button>');
+    a.innerHTML=PP(false,'Continua')+'<button class="midbtn" type="button" data-a="listen">▶ L’original</button>'+(S.take?'<button class="midbtn" type="button" data-a="you">▶ Tu</button>':'')+(S.cur+1<S.phrases.length?'<button class="midbtn" type="button" data-a="next">Següent <span class="kbd">→</span></button>':'<button class="midbtn" type="button" data-a="final">Resum</button>');
   }
 }
 $('#stActions').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;
   if(a==='toggle')flowToggle();else if(a==='start')flowStart();else if(a==='listen'){FL.token++;listen()}else if(a==='pause')flowPause();else if(a==='resume')flowRetry();else if(a==='retry')flowRetry();
   else if(a==='next')flowNext();else if(a==='you')flowListenYou();else if(a==='final')flowFinal();else if(a==='review')flowReview();else if(a==='restart'){FL.queue=null;select(0);flowStep()}
-  else if(a==='full')flowFull();else if(a==='stopfull'){cancel()}else if(a==='home'){FL.state='idle';select(0);renderStudent()}});
+  else if(a==='full')flowFull();else if(a==='stopfull'){cancel()}else if(a==='home'){FL.state='idle';select(0);showLastTake();renderStudent()}});
 $('#stFinal').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;FL.state='idle';select(+b.dataset.i);renderStudent()});
 // gear menu
 $('#bGear').addEventListener('click',e=>{e.stopPropagation();const p=$('#gearPop');p.hidden=!p.hidden;$('#bGear').setAttribute('aria-expanded',String(!p.hidden))});
@@ -2701,10 +2736,12 @@ function monitorOn(on){
   if(on){
     if(!monCtx){const C=window.AudioContext||window.webkitAudioContext;try{monCtx=new C({latencyHint:0})}catch(e){monCtx=new C({latencyHint:'interactive'})}}
     if(monCtx.state==='suspended')monCtx.resume();
-    if(!mic.mon){const src=monCtx.createMediaStreamSource(mic.stream),g=monCtx.createGain();g.gain.value=0.8;src.connect(g).connect(monCtx.destination);mic.mon=g;mic.monSrc=src}
-    mic.mon.gain.setTargetAtTime(0.8,monCtx.currentTime,0.02);
+    const want=S.monGain!=null&&S.monGain>0?S.monGain:0.6;
+    if(!mic.mon){const src=monCtx.createMediaStreamSource(mic.stream),g=monCtx.createGain();g.gain.value=want;src.connect(g).connect(monCtx.destination);mic.mon=g;mic.monSrc=src}
+    mic.mon.gain.setTargetAtTime(want,monCtx.currentTime,0.02);
+    if(!(S.monGain>0)){S.monGain=want;$('#mxMon').value=Math.round(want*100);$('#mxMonV').textContent=Math.round(want*100)+' %'}
     const ms=Math.round(((monCtx.baseLatency||0)+(monCtx.outputLatency||0))*1000+10);$('#monInfo').textContent=ms>35?'Retard d’uns '+ms+' ms en aquest ordinador: si et molesta, desactiva-ho.':'Retard d’uns '+ms+' ms.';
-  }else if(mic.mon){mic.mon.gain.setTargetAtTime(0,monCtx.currentTime,0.02);$('#monInfo').textContent=''}
+  }else if(mic.mon){mic.mon.gain.setTargetAtTime(0,monCtx.currentTime,0.02);$('#monInfo').textContent='';S.monGain=0;$('#mxMon').value=0;$('#mxMonV').textContent='no'}
 }
 function setMonitor(on){S.monitor=on;$('#oMon').checked=on;const o2=$('#oMon2');if(o2)o2.checked=on;try{localStorage.setItem('mirall-monitor',on?'1':'0')}catch(e){}if(!mic){if(on)ensureMic().catch(()=>{});return}monitorOn(on)}
 $('#oMon').addEventListener('change',()=>setMonitor($('#oMon').checked));
